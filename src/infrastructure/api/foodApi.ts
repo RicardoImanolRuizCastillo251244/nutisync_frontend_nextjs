@@ -1,0 +1,100 @@
+import type { Food } from '@/src/core/entities/Food';
+
+const mockFoods: Food[] = [
+  {
+    id: '1',
+    name: 'Pollo a la plancha',
+    portion: '100g',
+    calories: 165,
+    protein: 31,
+    carbs: 0,
+    fat: 3.6,
+  },
+  {
+    id: '2',
+    name: 'Arroz blanco',
+    portion: '1 taza',
+    calories: 205,
+    protein: 4.2,
+    carbs: 45,
+    fat: 0.4,
+  },
+  {
+    id: '3',
+    name: 'Aguacate',
+    portion: '1/2 pieza',
+    calories: 120,
+    protein: 1.5,
+    carbs: 6,
+    fat: 11,
+  },
+  {
+    id: '4',
+    name: 'Manzana',
+    portion: '1 unidad',
+    calories: 95,
+    protein: 0.5,
+    carbs: 25,
+    fat: 0.3,
+  },
+  {
+    id: '5',
+    name: 'Pescado a la plancha',
+    portion: '100g',
+    calories: 206,
+    protein: 22,
+    carbs: 0,
+    fat: 12,
+  },
+  {
+    id: '6',
+    name: 'Ensalada mixta',
+    portion: '1 plato',
+    calories: 50,
+    protein: 2,
+    carbs: 10,
+    fat: 0.5,
+  },
+  {
+    id: '7',
+    name: 'Yogur natural',
+    portion: '1 unidad',
+    calories: 59,
+    protein: 10,
+    carbs: 4,
+    fat: 0.4,
+  },
+  {
+    id: '8',
+    name: 'Huevo cocido',
+    portion: '1 unidad',
+    calories: 68,
+    protein: 5.5,
+    carbs: 0.5,
+    fat: 4.8,
+  },
+  {
+    id: '9',
+    name: 'Pan integral',
+    portion: '1 rebanada',
+    calories: 70,
+    protein: 3,
+    carbs: 12,
+    fat: 1,
+  },
+  {
+    id: '10',
+    name: 'Queso fresco',
+    portion: '30g',
+    calories: 80,
+    protein: 6,
+    carbs: 1,
+    fat: 6,
+  },
+];
+
+export const foodApi = {
+  getAll: async (): Promise<Food[]> => {
+    return new Promise((resolve) => setTimeout(() => resolve(mockFoods), 200));
+  },
+};

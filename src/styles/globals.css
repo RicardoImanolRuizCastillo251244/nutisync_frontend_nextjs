@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1A4D3E;
+  --color-primary-dark: #143d31;
+  --color-primary-light: #d4ede2;
+}
+
+@layer base {
+  :root {
+    --radius-md: 0.75rem;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(212, 237, 226, 0.9) 0%, rgba(212, 237, 226, 0) 35%),
+      radial-gradient(circle at 0% 100%, rgba(232, 245, 239, 0.9) 0%, rgba(232, 245, 239, 0) 30%),
+      #f4f7f6;
+    color: #1f2937;
+  }
+}
+
+@layer components {
+  .panel-card {
+    @apply rounded-2xl border border-gray-200/80 bg-white shadow-sm;
+  }
+
+  .panel-card-soft {
+    @apply rounded-2xl border border-primary-light/80 bg-primary-light/35 shadow-sm;
+  }
+
+  .panel-input {
+    @apply w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition outline-none;
+    @apply focus:border-[#24B38A] focus:ring-2 focus:ring-[#24B38A]/25;
+  }
+
+  .panel-select {
+    @apply w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition outline-none;
+    @apply focus:border-[#24B38A] focus:ring-2 focus:ring-[#24B38A]/25;
+  }
+
+  .btn-brand {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60;
+    background-color: #24B38A;
+  }
+
+  .btn-brand:hover {
+    background-color: #1f9b77;
+  }
+
+  .btn-brand-outline {
+    @apply inline-flex items-center justify-center rounded-xl border border-primary-light px-4 py-2 font-semibold text-primary transition disabled:cursor-not-allowed disabled:opacity-60;
+    background-color: #ffffff;
+  }
+
+  .btn-brand-outline:hover {
+    background-color: #f5faf8;
+  }
+
+  .btn-brand-danger {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold text-white shadow-md transition disabled:cursor-not-allowed disabled:opacity-60;
+    background-color: #b91c1c;
+  }
+
+  .btn-brand-danger:hover {
+    background-color: #991b1b;
+  }
+
+  .status-chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}

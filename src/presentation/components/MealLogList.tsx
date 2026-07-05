@@ -1,0 +1,58 @@
+'use client';
+
+import type { MealLog } from '@/src/core/entities/MealLog';
+import VoiceNotePlayer from '@/src/presentation/components/VoiceNotePlayer';
+
+export interface MealLogRow {
+  mealName: string;
+  log?: MealLog;
+}
+
+interface MealLogListProps {
+  date: string;
+  rows: MealLogRow[];
+  onToggleConsumed: (row: MealLogRow) => void;
+  isUpdating: boolean;
+}
+
+export default function MealLogList({ date, rows, onToggleConsumed, isUpdating }: MealLogListProps) {
+  return (
+    <div className="panel-card p-4">
+      <h3 className="text-base font-semibold text-gray-800 mb-1">Registros del dia</h3>
+      <p className="text-sm text-gray-500 mb-4">Fecha: {date}</p>
+
+      <div className="space-y-2">
+        {rows.map((row) => {
+          const consumed = row.log?.consumed ?? false;
+
+          return (
+            <div key={row.mealName} className="rounded-lg border border-gray-100 bg-white/70 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="font-medium text-gray-800">{row.mealName}</p>
+                  <p className={`text-xs ${consumed ? 'text-emerald-600' : 'text-amber-600'}`}>
+                    {consumed ? 'Consumido' : 'Pendiente'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => onToggleConsumed(row)}
+                  disabled={isUpdating}
+                  className="btn-brand-outline"
+                >
+                  {consumed ? 'Marcar pendiente' : 'Marcar consumida'}
+                </button>
+              </div>
+
+              <div className="mt-3">
+                <p className="text-xs text-gray-500 mb-1">Nota de voz</p>
+                <VoiceNotePlayer noteId={row.log?.voiceNoteId} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
