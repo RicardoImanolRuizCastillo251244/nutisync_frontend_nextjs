@@ -1,58 +1,127 @@
 import type { User } from '@/src/core/entities/User';
 import { STORAGE_KEYS } from '@/src/infrastructure/storage/storageKeys';
 
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'nutriologo@nutrisync.com',
-    name: 'Nutriólogo Demo',
-    role: 'nutritionist',
-    createdAt: new Date().toISOString(),
-  },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-const getUserFromToken = (token: string): User | null => {
-  const match = token.match(/^fake-access-(.+)-\d+$/);
-  if (!match) return null;
-  const userId = match[1];
-  return mockUsers.find((u) => u.id === userId) ?? null;
-};
+interface LoginResponse {
+  success: boolean;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+    user: {
+      id: string;
+      email: string;
+      name: string;
+      role: 'nutritionist' | 'patient';
+      patientProfileId?: string;
+    };
+  };
+}
 
 export const authApi = {
   login: async (email: string, password: string) => {
-    const user = mockUsers.find((u) => u.email === email);
-    if (!user || password !== '1234567A') {
-      throw new Error('Credenciales inválidas');
+    const res = await fetch(`${API_URL}/v1/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || 'Credenciales inválidas');
     }
-    const accessToken = `fake-access-${user.id}-${Date.now()}`;
+
+    const { data } = (await res.json()) as LoginResponse;
+
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.accessToken, accessToken);
-      localStorage.removeItem(STORAGE_KEYS.refreshToken);
-      localStorage.removeItem(STORAGE_KEYS.user);
+      localStorage.setItem(STORAGE_KEYS.accessToken, data.accessToken);
+      localStorage.setItem(STORAGE_KEYS.refreshToken, data.refreshToken);
     }
-    return { user, accessToken };
+
+    return {
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        name: data.user.name,
+        role: data.user.role,
+        patientProfileId: data.user.patientProfileId,
+      } as User & { patientProfileId?: string },
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+    };
   },
 
   logout: async () => {
+    const token = authApi.getAccessToken();
+    const refreshToken = authApi.getRefreshToken();
+
+    if (token && refreshToken) {
+      try {
+        await fetch(`${API_URL}/v1/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch {
+        // Silently ignore logout errors
+      }
+    }
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem(STORAGE_KEYS.accessToken);
       localStorage.removeItem(STORAGE_KEYS.refreshToken);
-      localStorage.removeItem(STORAGE_KEYS.user);
     }
+  },
+
+  refreshToken: async (refreshToken: string) => {
+    const res = await fetch(`${API_URL}/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Token refresh failed');
+    }
+
+    const { data } = await res.json();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEYS.accessToken, data.accessToken);
+    }
+    return { accessToken: data.accessToken };
   },
 
   getCurrentUser: (): User | null => {
     if (typeof window === 'undefined') return null;
-    localStorage.removeItem(STORAGE_KEYS.refreshToken);
-    localStorage.removeItem(STORAGE_KEYS.user);
     const token = localStorage.getItem(STORAGE_KEYS.accessToken);
     if (!token) return null;
-    return getUserFromToken(token);
+
+    try {
+      // Decode JWT payload without verifying signature
+      const payload = JSON.parse(atob(token.split('.')[1]!));
+      return {
+        id: payload.sub,
+        email: payload.email || '',
+        name: payload.name || '',
+        role: payload.role,
+        createdAt: new Date().toISOString(),
+      };
+    } catch {
+      return null;
+    }
   },
 
   getAccessToken: (): string | null => {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(STORAGE_KEYS.accessToken);
+  },
+
+  getRefreshToken: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEYS.refreshToken);
   },
 
   setAccessToken: (token: string): void => {

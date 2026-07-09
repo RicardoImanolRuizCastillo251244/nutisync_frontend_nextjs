@@ -1,12 +1,14 @@
 import axios from 'axios';
 import { authApi } from './authApi';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
 const axiosClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
+  baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Interceptor para añadir token
+// Interceptor to attach access token
 axiosClient.interceptors.request.use((config) => {
   const token = authApi.getAccessToken();
   if (token) {
@@ -15,21 +17,28 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor para renovar token en caso de 401
+// Interceptor to refresh token on 401
 axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      // Simulación temporal de renovación usando solo token de sesión.
-      const currentToken = authApi.getAccessToken();
-      if (currentToken) {
-        const userId = currentToken.match(/^fake-access-(.+)-\d+$/)?.[1] ?? '1';
-        const newAccessToken = `fake-access-${userId}-${Date.now()}`;
-        authApi.setAccessToken(newAccessToken);
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return axiosClient(originalRequest);
+
+      const refreshToken = authApi.getRefreshToken();
+      if (refreshToken) {
+        try {
+          const { accessToken } = await authApi.refreshToken(refreshToken);
+          authApi.setAccessToken(accessToken);
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          return axiosClient(originalRequest);
+        } catch {
+          // Refresh failed, redirect to login
+          if (typeof window !== 'undefined') {
+            localStorage.clear();
+            window.location.href = '/login';
+          }
+        }
       }
     }
     return Promise.reject(error);
