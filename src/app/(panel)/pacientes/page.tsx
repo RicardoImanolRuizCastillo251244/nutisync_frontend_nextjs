@@ -92,11 +92,10 @@ export default function PatientsPage() {
 					id: editingPatient.id,
 					updates: {
 						name: values.name,
-						lastName: values.lastName,
 						email: values.email,
-						phone: values.phone,
-						birthDate: values.birthDate,
-						gender: values.gender,
+						phone: values.phone || undefined,
+						birthDate: values.birthDate || undefined,
+						gender: values.gender || undefined,
 					},
 				});
 				toast.success('Paciente actualizado correctamente');
@@ -132,7 +131,7 @@ export default function PatientsPage() {
 
 	const handleDecline = async (patient: Patient) => {
 		const confirmed = window.confirm(
-			`¿Declinar la solicitud de ${patient.name} ${patient.lastName}?`
+			`¿Declinar la solicitud de ${patient.name}?`
 		);
 
 		if (!confirmed) return;
@@ -170,7 +169,7 @@ export default function PatientsPage() {
 
 	const handleDelete = async (patient: Patient) => {
 		const confirmed = window.confirm(
-			`¿Seguro que deseas eliminar a ${patient.name} ${patient.lastName}?`
+			`¿Seguro que deseas eliminar a ${patient.name}?`
 		);
 
 		if (!confirmed) return;
@@ -193,7 +192,7 @@ export default function PatientsPage() {
 			header: 'Nombre completo',
 			render: (patient) => (
 				<span className="font-medium text-gray-800">
-					{patient.name} {patient.lastName}
+					{patient.name}
 				</span>
 			),
 		},
@@ -205,7 +204,7 @@ export default function PatientsPage() {
 		{
 			key: 'phone',
 			header: 'Teléfono',
-			render: (patient) => <span className="text-gray-600">{patient.phone}</span>,
+			render: (patient) => <span className="text-gray-600">{patient.phone ?? '-'}</span>,
 		},
 		{
 			key: 'createdAt',
@@ -251,7 +250,7 @@ export default function PatientsPage() {
 			header: 'Paciente',
 			render: (patient) => (
 				<span className="font-medium text-gray-800">
-					{patient.name} {patient.lastName}
+					{patient.name}
 				</span>
 			),
 		},
@@ -416,11 +415,10 @@ export default function PatientsPage() {
 					editingPatient
 						? {
 								name: editingPatient.name,
-								lastName: editingPatient.lastName,
 								email: editingPatient.email,
-								phone: editingPatient.phone,
-								birthDate: editingPatient.birthDate,
-								gender: editingPatient.gender,
+								phone: editingPatient.phone ?? '',
+								birthDate: editingPatient.birthDate ?? '',
+								gender: editingPatient.gender as 'male' | 'female' | 'other' | undefined,
 							}
 						: undefined
 				}
@@ -443,7 +441,7 @@ export default function PatientsPage() {
 						<div className="mt-5 space-y-3">
 							<div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
 								<p className="text-xs uppercase tracking-wide text-gray-500">Nombre</p>
-								<p className="mt-1 text-base font-semibold text-gray-800">{detailsPatient.name} {detailsPatient.lastName}</p>
+								<p className="mt-1 text-base font-semibold text-gray-800">{detailsPatient.name}</p>
 							</div>
 							<div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
 								<p className="text-xs uppercase tracking-wide text-gray-500">Correo</p>
@@ -451,7 +449,7 @@ export default function PatientsPage() {
 							</div>
 							<div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
 								<p className="text-xs uppercase tracking-wide text-gray-500">Teléfono</p>
-								<p className="mt-1 text-base font-semibold text-gray-800">{detailsPatient.phone}</p>
+								<p className="mt-1 text-base font-semibold text-gray-800">{detailsPatient.phone ?? '-'}</p>
 							</div>
 							<div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
 								<p className="text-xs uppercase tracking-wide text-gray-500">Plan alimenticio asignado</p>

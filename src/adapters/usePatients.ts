@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { patientRepository } from '../infrastructure/repositories/PatientRepositoryImpl';
 import type { Patient } from '../core/entities/Patient';
+import type { CreatePatientInput } from '../core/ports/PatientRepository';
 import { useAuth } from '../presentation/contexts/AuthContext';
 
 export const usePatients = () => {
@@ -31,8 +32,8 @@ export const usePatients = () => {
   });
 
   const createPatient = useMutation({
-    mutationFn: (newPatient: Omit<Patient, 'id' | 'createdAt' | 'nutritionistId'>) =>
-      patientRepository.create(newPatient, nutritionistId),
+    mutationFn: (input: CreatePatientInput) =>
+      patientRepository.create(input),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients', nutritionistId] });
     },
@@ -40,21 +41,21 @@ export const usePatients = () => {
 
   const updatePatient = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Patient> }) =>
-      patientRepository.update(id, updates, nutritionistId),
+      patientRepository.update(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients', nutritionistId] });
     },
   });
 
   const deletePatient = useMutation({
-    mutationFn: (id: string) => patientRepository.delete(id, nutritionistId),
+    mutationFn: (id: string) => patientRepository.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients', nutritionistId] });
     },
   });
 
   const approvePatient = useMutation({
-    mutationFn: (id: string) => patientRepository.assignToNutritionist(id, nutritionistId),
+    mutationFn: (id: string) => patientRepository.assignToNutritionist(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients', nutritionistId] });
       queryClient.invalidateQueries({ queryKey: ['patients-pending'] });

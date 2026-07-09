@@ -38,9 +38,9 @@ const getDefaultClinicalRecord = (
   patient: Patient | null
 ): Omit<ClinicalRecord, 'id' | 'createdAt' | 'updatedAt'> => ({
   patientId,
-  name: patient ? `${patient.name} ${patient.lastName}` : '',
-  sex: patient ? genderLabel[patient.gender] : 'Otro',
-  age: patient ? getAge(patient.birthDate) : 0,
+  name: patient ? patient.name : '',
+  sex: patient?.gender ? genderLabel[patient.gender] : 'Otro' as 'Masculino' | 'Femenino' | 'Otro',
+  age: patient?.birthDate ? getAge(patient.birthDate) : 0,
   education: '',
   occupation: '',
   religion: '',
@@ -253,10 +253,10 @@ export default function PatientDetailPage() {
       <div className="panel-card border-l-4 border-l-primary p-6">
         <p className="text-sm text-gray-500 mb-2">Expediente clínico</p>
         <h1 className="text-2xl font-bold text-gray-800">
-          {patient.name} {patient.lastName}
+          {patient.name}
         </h1>
         <p className="text-gray-600 mt-1">
-          {getAge(patient.birthDate)} años · {genderLabel[patient.gender]}
+          {patient.birthDate ? `${getAge(patient.birthDate)} años` : '—'} · {patient.gender ? genderLabel[patient.gender] : '—'}
         </p>
       </div>
 

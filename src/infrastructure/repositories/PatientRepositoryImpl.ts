@@ -1,127 +1,88 @@
 import type { Patient } from '../../core/entities/Patient';
 import type { PatientRepository } from '../../core/ports/PatientRepository';
-import { loadFromLocalStorage, saveToLocalStorage } from '../storage/localStorageService';
-import { STORAGE_KEYS } from '../storage/storageKeys';
-import type { PatientPlanAssignment } from '../../core/entities/PatientPlanAssignment';
+import axiosClient from '../api/axiosClient';
 
-const MOCK_NUTRITIONIST_ID = '1';
+/**
+ * Mapea la respuesta del backend (PatientWithUser) a la entidad Patient del frontend.
+ *
+ * Backend devuelve:
+ *   { id, userId, nutritionistUserId, status, phone, birthDate, gender, deletedAt, createdAt,
+ *     user: { id, email, name } }
+ *
+ * Lo mapeamos a:
+ *   { id, name, email, phone, birthDate, gender, createdAt, nutritionistId, status, deletedAt }
+ */
+function mapPatient(raw: Record<string, unknown>): Patient {
+  const user = (raw.user as Record<string, unknown>) ?? {};
 
-const createMockPatients = (): Patient[] => {
-  const firstNames = [
-    'Ana', 'Luis', 'Mariana', 'Carlos', 'Sofia', 'Diego', 'Valeria', 'Jorge', 'Camila', 'Ricardo',
-    'Lucia', 'Hector', 'Elena', 'Mateo', 'Fernanda', 'Pablo', 'Daniela', 'Roberto', 'Paula', 'Andres',
-    'Natalia', 'Ivan', 'Karla', 'Emilio', 'Sara', 'Alberto', 'Gabriela', 'Tomas'
-  ];
-  const lastNames = [
-    'Lopez', 'Garcia', 'Ramirez', 'Torres', 'Sanchez', 'Mendoza', 'Reyes', 'Herrera',
-    'Gutierrez', 'Vega', 'Flores', 'Navarro', 'Rios', 'Castillo', 'Ortega', 'Morales'
-  ];
-
-  return Array.from({ length: 28 }, (_, index) => {
-    const firstName = firstNames[index % firstNames.length];
-    const lastName = lastNames[index % lastNames.length];
-    const isApproved = index < 16;
-    const createdAt = new Date(Date.now() - index * 86_400_000).toISOString();
-
-    return {
-      id: `mock-patient-${index + 1}`,
-      name: firstName,
-      lastName,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index + 1}@demo.com`,
-      phone: `55123${String(index + 1000).slice(-4)}`,
-      birthDate: `199${index % 10}-0${(index % 9) + 1}-1${index % 9}`,
-      gender: (index % 3 === 0 ? 'female' : index % 3 === 1 ? 'male' : 'other') as Patient['gender'],
-      createdAt,
-      nutritionistId: isApproved ? MOCK_NUTRITIONIST_ID : '',
-      deletedAt: null,
-    };
-  });
-};
-
-const loadPatients = (): Patient[] => {
-  const patients = loadFromLocalStorage<Patient[]>(STORAGE_KEYS.patients, []);
-
-  if (patients.length > 0) {
-    return patients;
-  }
-
-  const mockPatients = createMockPatients();
-  saveToLocalStorage(STORAGE_KEYS.patients, mockPatients);
-  return mockPatients;
-};
-
-const loadAssignments = (): PatientPlanAssignment[] =>
-  loadFromLocalStorage<PatientPlanAssignment[]>(STORAGE_KEYS.planAssignments, []);
+  return {
+    id: String(raw.id ?? ''),
+    name: String(user.name ?? raw.name ?? ''),
+    email: String(user.email ?? raw.email ?? ''),
+    phone: raw.phone ? String(raw.phone) : null,
+    birthDate: raw.birthDate ? String(raw.birthDate) : null,
+    gender: (raw.gender as Patient['gender']) ?? null,
+    createdAt: String(raw.createdAt ?? ''),
+    nutritionistId: raw.nutritionistUserId
+      ? String(raw.nutritionistUserId)
+      : null,
+    status: raw.status ? String(raw.status) : null,
+    deletedAt: raw.deletedAt ? String(raw.deletedAt) : null,
+  };
+}
 
 export const patientRepository: PatientRepository = {
   async getAllByNutritionist(nutritionistId) {
-    const patients = loadPatients();
-    return patients.filter((p) => p.nutritionistId === nutritionistId && !p.deletedAt);
+    const { data } = await axiosClient.get('/v1/patients');
+    const patients: Patient[] = Array.isArray(data?.data) ? data.data.map(mapPatient) : (Array.isArray(data) ? data.map(mapPatient) : []);
+    return patients.filter((p) => !p.deletedAt);
   },
 
   async getPendingRegistrations() {
-    const patients = loadPatients();
+    const { data } = await axiosClient.get('/v1/patients/pending');
+    const patients: Patient[] = Array.isArray(data?.data) ? data.data.map(mapPatient) : (Array.isArray(data) ? data.map(mapPatient) : []);
     return patients.filter((p) => !p.nutritionistId && !p.deletedAt);
   },
 
-  async getById(id, nutritionistId) {
-    const patients = await this.getAllByNutritionist(nutritionistId);
-    return patients.find((p) => p.id === id);
+  async getById(id, _nutritionistId) {
+    const { data } = await axiosClient.get(`/v1/patients/${id}`);
+    const raw = data?.data ?? data;
+    return raw ? mapPatient(raw as Record<string, unknown>) : undefined;
   },
 
-  async create(patient, nutritionistId) {
-    const patients = loadPatients();
-    const newPatient: Patient = {
-      ...patient,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      nutritionistId,
-    };
-    saveToLocalStorage(STORAGE_KEYS.patients, [...patients, newPatient]);
-    return newPatient;
+  async create(input) {
+    const { data } = await axiosClient.post('/v1/patients', {
+      email: input.email,
+      password: input.password,
+      name: input.name,
+      phone: input.phone,
+      birthDate: input.birthDate,
+      gender: input.gender,
+    });
+
+    const raw = data?.data ?? data;
+    return mapPatient(raw as Record<string, unknown>);
   },
 
-  async update(id, updates, nutritionistId) {
-    const patients = loadPatients();
-    const index = patients.findIndex(
-      (p) => p.id === id && p.nutritionistId === nutritionistId
-    );
-    if (index === -1) throw new Error('Paciente no encontrado o no autorizado');
-    const updated = { ...patients[index], ...updates };
-    patients[index] = updated;
-    saveToLocalStorage(STORAGE_KEYS.patients, patients);
-    return updated;
+  async update(id, updates) {
+    const { data } = await axiosClient.patch(`/v1/patients/${id}`, {
+      name: updates.name,
+      phone: updates.phone,
+      birthDate: updates.birthDate,
+      gender: updates.gender,
+    });
+
+    const raw = data?.data ?? data;
+    return mapPatient(raw as Record<string, unknown>);
   },
 
-  async assignToNutritionist(id, nutritionistId) {
-    const patients = loadPatients();
-    const index = patients.findIndex((p) => p.id === id && !p.deletedAt);
-    if (index === -1) throw new Error('Paciente no encontrado');
-    const currentPatient = patients[index];
-    if (currentPatient.nutritionistId && currentPatient.nutritionistId !== nutritionistId) {
-      throw new Error('Paciente ya asignado a otro nutriólogo');
-    }
-    const assignedPatient: Patient = {
-      ...currentPatient,
-      nutritionistId,
-    };
-    patients[index] = assignedPatient;
-    saveToLocalStorage(STORAGE_KEYS.patients, patients);
-    return assignedPatient;
+  async assignToNutritionist(id) {
+    const { data } = await axiosClient.post(`/v1/patients/${id}/approve`);
+    const raw = data?.data ?? data;
+    return mapPatient(raw as Record<string, unknown>);
   },
 
-  async delete(id, nutritionistId) {
-    const patients = loadPatients();
-    const assignments = loadAssignments();
-    const activeAssignments = assignments.filter(
-      (a) => a.patientId === id && a.nutritionistId === nutritionistId && a.active
-    );
-    if (activeAssignments.length > 0) {
-      throw new Error('No se puede eliminar paciente con planes activos');
-    }
-    saveToLocalStorage(
-      STORAGE_KEYS.patients,
-      patients.filter((p) => !(p.id === id && p.nutritionistId === nutritionistId))
-    );
+  async delete(id) {
+    await axiosClient.delete(`/v1/patients/${id}`);
   },
 };

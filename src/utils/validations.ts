@@ -6,22 +6,19 @@ export const patientFormSchema = z.object({
     .trim()
     .min(2, 'El nombre debe tener al menos 2 caracteres')
     .max(80, 'El nombre no puede exceder 80 caracteres'),
-  lastName: z
-    .string()
-    .trim()
-    .min(2, 'El apellido debe tener al menos 2 caracteres')
-    .max(80, 'El apellido no puede exceder 80 caracteres'),
   email: z.email('Ingresa un correo electrónico válido'),
   phone: z
     .string()
     .trim()
     .regex(/^\d+$/, 'El teléfono solo debe contener números')
     .min(7, 'Ingresa un teléfono válido')
-    .max(20, 'El teléfono no puede exceder 20 caracteres'),
-  birthDate: z.string().min(1, 'La fecha de nacimiento es obligatoria'),
+    .max(20, 'El teléfono no puede exceder 20 caracteres')
+    .optional()
+    .or(z.literal('')),
+  birthDate: z.string().optional().or(z.literal('')),
   gender: z.enum(['male', 'female', 'other'], {
     error: 'Selecciona un género válido',
-  }),
+  }).optional(),
 });
 
 export type PatientFormValues = z.infer<typeof patientFormSchema>;

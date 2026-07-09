@@ -191,7 +191,7 @@ export default function ConstructorDietasPage() {
 
       try {
         const patientNameById = new Map(
-          patients.map((patient) => [patient.id, `${patient.name} ${patient.lastName}`])
+          patients.map((patient) => [patient.id, patient.name])
         );
 
         const entries = await Promise.all(

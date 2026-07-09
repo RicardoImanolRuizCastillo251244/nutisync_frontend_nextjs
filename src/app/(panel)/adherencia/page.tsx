@@ -285,7 +285,7 @@ export default function AdherenciaPage() {
             <option value="">Selecciona un paciente</option>
             {patients.map((patient) => (
               <option key={patient.id} value={patient.id}>
-                {patient.name} {patient.lastName}
+                {patient.name}
               </option>
             ))}
           </select>

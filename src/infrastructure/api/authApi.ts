@@ -52,16 +52,14 @@ export const authApi = {
   },
 
   logout: async () => {
-    const token = authApi.getAccessToken();
     const refreshToken = authApi.getRefreshToken();
 
-    if (token && refreshToken) {
+    if (refreshToken) {
       try {
         await fetch(`${API_URL}/v1/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ refreshToken }),
         });

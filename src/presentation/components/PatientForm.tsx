@@ -15,11 +15,10 @@ interface PatientFormProps {
 
 const emptyValues: PatientFormValues = {
   name: '',
-  lastName: '',
   email: '',
   phone: '',
   birthDate: '',
-  gender: 'other',
+  gender: undefined,
 };
 
 export default function PatientForm({
@@ -54,18 +53,6 @@ export default function PatientForm({
             className="panel-input"
           />
           {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-          <input
-            type="text"
-            {...register('lastName')}
-            className="panel-input"
-          />
-          {errors.lastName && (
-            <p className="mt-1 text-xs text-red-600">{errors.lastName.message}</p>
-          )}
         </div>
 
         <div>
@@ -114,6 +101,7 @@ export default function PatientForm({
             {...register('gender')}
             className="panel-select"
           >
+            <option value="">Sin especificar</option>
             <option value="male">Masculino</option>
             <option value="female">Femenino</option>
             <option value="other">Otro</option>
