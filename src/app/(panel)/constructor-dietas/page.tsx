@@ -409,18 +409,24 @@ export default function ConstructorDietasPage() {
 
     try {
       toast.info('Generando plan sugerido desde Edamam...');
-      const suggestedItems = await dietPlanApi.generateSuggested({
+      const backendMeals = (await dietPlanApi.generateSuggested({
         caloriesTarget: targetCalories,
-      });
+      })) as Array<{ name: string; items: Array<Record<string, unknown>> }>;
 
-      const mealNames = selectedDay.meals.map((meal) => meal.name);
-      const mealsPerSlot = Math.ceil(suggestedItems.length / mealNames.length);
-      const updatedMeals = selectedDay.meals.map((meal, index) => {
-        const start = index * mealsPerSlot;
-        const slot = suggestedItems.slice(start, start + mealsPerSlot);
+      if (!Array.isArray(backendMeals) || backendMeals.length === 0) {
+        toast.error('No se recibieron comidas del backend');
+        return;
+      }
+
+      // Emparejar comidas del backend con las del día por índice
+      const updatedMeals = selectedDay.meals.map((meal, idx) => {
+        const backendMeal = backendMeals[idx];
+        if (!backendMeal?.items?.length) return meal;
+
         return {
           ...meal,
-          items: slot.map((item: Record<string, unknown>) => ({
+          name: String(backendMeal.name ?? meal.name),
+          items: backendMeal.items.map((item) => ({
             foodId: `suggested-${Date.now()}-${Math.random()}`,
             foodName: String(item.name ?? ''),
             quantity: 1,
