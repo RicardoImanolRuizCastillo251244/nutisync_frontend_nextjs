@@ -8,7 +8,6 @@ import { usePatients } from '@/src/adapters/usePatients';
 import type { DietDay } from '@/src/core/entities/DietDay';
 import type { DietPlan } from '@/src/core/entities/DietPlan';
 import type { Meal } from '@/src/core/entities/Meal';
-import type { SuggestedMealItem } from '@/src/infrastructure/api/foodApi';
 import { dietPlanApi } from '@/src/infrastructure/api/dietPlanApi';
 import AssignPlanModal from '@/src/presentation/components/AssignPlanModal';
 import MacroSummary from '@/src/presentation/components/MacroSummary';
@@ -124,7 +123,6 @@ export default function ConstructorDietasPage() {
     isDeleting,
     isAssigning,
   } = useDietPlans();
-  const { foods, isLoading: isFoodsLoading } = useFoods();
   const { patients, isLoading: isPatientsLoading } = usePatients();
 
   const [activeTab, setActiveTab] = useState<EditorTab>('saved');
@@ -406,28 +404,48 @@ export default function ConstructorDietasPage() {
     );
   };
 
-  const handleQuickGeneration = () => {
+  const handleQuickGeneration = async () => {
     if (!selectedDay) return;
-    if (foods.length === 0) {
-      toast.error('No hay catalogo de alimentos disponible para generar el plan');
-      return;
+
+    try {
+      toast.info('Generando plan sugerido desde Edamam...');
+      const suggestedItems = await dietPlanApi.generateSuggested({
+        caloriesTarget: targetCalories,
+      });
+
+      const mealNames = selectedDay.meals.map((meal) => meal.name);
+      const mealsPerSlot = Math.ceil(suggestedItems.length / mealNames.length);
+      const updatedMeals = selectedDay.meals.map((meal, index) => {
+        const start = index * mealsPerSlot;
+        const slot = suggestedItems.slice(start, start + mealsPerSlot);
+        return {
+          ...meal,
+          items: slot.map((item: Record<string, unknown>) => ({
+            foodId: `suggested-${Date.now()}-${Math.random()}`,
+            foodName: String(item.name ?? ''),
+            quantity: 1,
+            unit: 'g' as const,
+            portion: String(item.portion ?? '100 g'),
+            calories: Math.round(Number(item.calories ?? 0)),
+            protein: Number(Number(item.protein ?? 0).toFixed(1)),
+            carbs: Number(Number(item.carbs ?? 0).toFixed(1)),
+            fat: Number(Number(item.fat ?? 0).toFixed(1)),
+          })),
+        };
+      });
+
+      setDays((previous) =>
+        previous.map((day) =>
+          day.dayNumber === selectedDayNumber
+            ? { ...day, meals: updatedMeals }
+            : day
+        )
+      );
+
+      toast.success(`Plan sugerido generado para ${DAY_LABELS[selectedDayNumber - 1]}`);
+    } catch {
+      toast.error('No se pudo generar el plan sugerido desde Edamam');
     }
-
-    const mealNames = selectedDay.meals.map((meal) => meal.name);
-    const generatedMeals = generateMealPlan(targetCalories, foods, mealNames);
-
-    setDays((previous) =>
-      previous.map((day) =>
-        day.dayNumber === selectedDayNumber
-          ? {
-              ...day,
-              meals: normalizeMeals(generatedMeals, mealNames),
-            }
-          : day
-      )
-    );
-
-    toast.success(`Plan sugerido generado para ${DAY_LABELS[selectedDayNumber - 1]}`);
   };
 
   const handleSavePlan = async () => {
@@ -495,19 +513,19 @@ export default function ConstructorDietasPage() {
         </button>
       </div>
 
-      {(isLoading || isFoodsLoading || isPatientsLoading) && (
+      {(isLoading || isPatientsLoading) && (
         <div className="panel-card p-6 text-gray-500">
           Cargando datos del constructor...
         </div>
       )}
 
-      {!isLoading && !isFoodsLoading && !isPatientsLoading && error && (
+      {!isLoading && !isPatientsLoading && error && (
         <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
           No se pudieron cargar los planes.
         </div>
       )}
 
-      {!isLoading && !isFoodsLoading && !isPatientsLoading && !error && activeTab === 'saved' && (
+      {!isLoading && !isPatientsLoading && !error && activeTab === 'saved' && (
         <div>
           <div className="panel-card p-4 mb-4">
             <label className="block text-sm text-gray-700 mb-2">Buscar plan por nombre</label>
@@ -544,7 +562,7 @@ export default function ConstructorDietasPage() {
         </div>
       )}
 
-      {!isLoading && !isFoodsLoading && !isPatientsLoading && !error && activeTab === 'edit' && (
+      {!isLoading && !isPatientsLoading && !error && activeTab === 'edit' && (
         <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-6">
           <div className="space-y-4">
             <MacroSummary meals={flattenMeals(days)} />
@@ -565,7 +583,7 @@ export default function ConstructorDietasPage() {
               />
               <button
                 type="button"
-                onClick={handleQuickGeneration}
+                onClick={() => void handleQuickGeneration()}
                 className="w-full mt-3 btn-brand"
               >
                 Generar plan sugerido del dia
@@ -733,7 +751,7 @@ export default function ConstructorDietasPage() {
             </div>
 
             {selectedDay?.meals.map((meal) => (
-              <MealBuilder key={meal.id} meal={meal} foods={foods} onMealChange={handleMealChange} />
+              <MealBuilder key={meal.id} meal={meal} onMealChange={handleMealChange} />
             ))}
           </div>
         </div>
