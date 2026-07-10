@@ -443,8 +443,9 @@ export default function ConstructorDietasPage() {
       );
 
       toast.success(`Plan sugerido generado para ${DAY_LABELS[selectedDayNumber - 1]}`);
-    } catch {
-      toast.error('No se pudo generar el plan sugerido desde Edamam');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'No se pudo generar el plan sugerido desde Edamam';
+      toast.error(message);
     }
   };
 
