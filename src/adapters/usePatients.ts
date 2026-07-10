@@ -51,6 +51,7 @@ export const usePatients = () => {
     mutationFn: (id: string) => patientRepository.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients', nutritionistId] });
+      queryClient.invalidateQueries({ queryKey: ['patients-pending'] });
     },
   });
 

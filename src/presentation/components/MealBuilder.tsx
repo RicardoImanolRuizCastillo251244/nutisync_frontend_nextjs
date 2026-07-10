@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 import type { Food } from '@/src/core/entities/Food';
 import type { Meal } from '@/src/core/entities/Meal';
 import type { MealFoodItem } from '@/src/core/entities/MealFoodItem';
+import { useFoods } from '@/src/adapters/useFoods';
 
 interface MealBuilderProps {
   meal: Meal;
-  foods: Food[];
   onMealChange: (meal: Meal) => void;
 }
 
@@ -28,12 +28,31 @@ const createItemFromFood = (
   fat: Number((food.fat * quantity).toFixed(1)),
 });
 
-export default function MealBuilder({ meal, foods, onMealChange }: MealBuilderProps) {
+export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState<MealFoodItem['unit']>('g');
+
+  // Debounce: solo buscar tras 350ms de inactividad
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedQuery(value), 350);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  // Búsqueda con debounce
+  const { foods, isLoading: isSearching } = useFoods(debouncedQuery);
 
   const totalCalories = useMemo(
     () => meal.items.reduce((sum, item) => sum + item.calories, 0),
@@ -41,13 +60,9 @@ export default function MealBuilder({ meal, foods, onMealChange }: MealBuilderPr
   );
 
   const filteredFoods = useMemo(() => {
-    const normalized = searchTerm.trim().toLowerCase();
-    if (!normalized) return [];
-
-    return foods
-      .filter((food) => food.name.toLowerCase().includes(normalized))
-      .slice(0, 10);
-  }, [foods, searchTerm]);
+    if (debouncedQuery.trim().length < 2) return [];
+    return foods.slice(0, 10);
+  }, [foods, debouncedQuery]);
 
   const addFood = (food: Food, selectedQuantity: number, selectedUnit: MealFoodItem['unit']) => {
     const newItem = createItemFromFood(food, selectedQuantity, selectedUnit);
@@ -56,6 +71,7 @@ export default function MealBuilder({ meal, foods, onMealChange }: MealBuilderPr
       items: [...meal.items, newItem],
     });
     setSearchTerm('');
+    setDebouncedQuery('');
     setIsSearchOpen(false);
     setSelectedFood(null);
     setQuantity(1);
@@ -110,7 +126,7 @@ export default function MealBuilder({ meal, foods, onMealChange }: MealBuilderPr
                 <div>
                   <p className="font-medium text-gray-800">{item.foodName}</p>
                   <p className="text-xs text-gray-500">
-                    {item.quantity} {item.unit} • Ref: {item.portion} • {Math.round(item.calories)} kcal
+                    {item.quantity} {item.unit} &middot; Ref: {item.portion} &middot; {Math.round(item.calories)} kcal
                   </p>
                 </div>
                 <button
@@ -135,28 +151,27 @@ export default function MealBuilder({ meal, foods, onMealChange }: MealBuilderPr
 
       <div className="grid grid-cols-1 gap-2">
         <div className="relative">
-          <label className="block text-xs text-gray-600 mb-1">Agregar alimento</label>
+          <label className="block text-xs text-gray-600 mb-1">Buscar alimento</label>
           <input
             type="text"
             value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setIsSearchOpen(true);
-            }}
+            onChange={(event) => handleSearchChange(event.target.value)}
             onFocus={() => setIsSearchOpen(true)}
             onBlur={() => {
               setTimeout(() => {
                 setIsSearchOpen(false);
-              }, 120);
+              }, 150);
             }}
             onKeyDown={handleInputKeyDown}
-            placeholder="Buscar alimento..."
+            placeholder="Buscar en Edamam..."
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
           />
 
-          {isSearchOpen && searchTerm.trim().length > 0 && (
+          {isSearchOpen && debouncedQuery.trim().length >= 2 && (
             <div className="absolute z-20 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-64 overflow-y-auto">
-              {filteredFoods.length === 0 ? (
+              {isSearching ? (
+                <p className="px-3 py-2 text-sm text-gray-400">Buscando...</p>
+              ) : filteredFoods.length === 0 ? (
                 <p className="px-3 py-2 text-sm text-gray-500">No se encontraron alimentos</p>
               ) : (
                 filteredFoods.map((food) => (
@@ -167,7 +182,8 @@ export default function MealBuilder({ meal, foods, onMealChange }: MealBuilderPr
                     onClick={() => handleSelectFood(food)}
                     className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-primary-light transition"
                   >
-                    {food.name} ({food.portion})
+                    <span className="font-medium">{food.name}</span>
+                    <span className="text-gray-400 ml-2">({food.portion} &middot; {Math.round(food.calories)} kcal)</span>
                   </button>
                 ))
               )}

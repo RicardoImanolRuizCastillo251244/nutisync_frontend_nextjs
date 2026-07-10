@@ -6,4 +6,8 @@ export interface Food {
   protein: number;
   carbs: number;
   fat: number;
+  imageUrl?: string | null;
+  sourceUrl?: string | null;
+  healthLabels?: string[];
+  dietLabels?: string[];
 }

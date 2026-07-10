@@ -131,14 +131,14 @@ export default function PatientsPage() {
 
 	const handleDecline = async (patient: Patient) => {
 		const confirmed = window.confirm(
-			`¿Declinar la solicitud de ${patient.name}?`
+			`¿Declinar y eliminar permanentemente la solicitud de ${patient.name}?`
 		);
 
 		if (!confirmed) return;
 
 		try {
 			await deletePatient(patient.id);
-			toast.success('Solicitud declinada correctamente');
+			toast.success('Solicitud declinada y eliminada permanentemente');
 		} catch (mutationError) {
 			const message =
 				mutationError instanceof Error
@@ -169,14 +169,14 @@ export default function PatientsPage() {
 
 	const handleDelete = async (patient: Patient) => {
 		const confirmed = window.confirm(
-			`¿Seguro que deseas eliminar a ${patient.name}?`
+			`¿Seguro que deseas eliminar permanentemente a ${patient.name}? Esta acción no se puede deshacer.`
 		);
 
 		if (!confirmed) return;
 
 		try {
 			await deletePatient(patient.id);
-			toast.success('Paciente eliminado correctamente');
+			toast.success('Paciente eliminado permanentemente');
 		} catch (mutationError) {
 			const message =
 				mutationError instanceof Error
