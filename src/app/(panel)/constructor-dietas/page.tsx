@@ -425,7 +425,6 @@ export default function ConstructorDietasPage() {
 
         return {
           ...meal,
-          name: String(backendMeal.name ?? meal.name),
           items: backendMeal.items.map((item) => ({
             foodId: `suggested-${Date.now()}-${Math.random()}`,
             foodName: String(item.name ?? ''),
