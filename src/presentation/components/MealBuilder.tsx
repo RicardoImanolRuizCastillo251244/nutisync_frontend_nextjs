@@ -221,21 +221,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
               {isSearching ? (
                 <p className="px-3 py-2 text-sm text-gray-400">Buscando...</p>
               ) : filteredFoods.length === 0 ? (
-                <div className="px-3 py-2">
-                  <p className="text-sm text-gray-500 mb-2">No se encontraron alimentos</p>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => {
-                      setShowCustomFood(true);
-                      setCustomFood((prev) => ({ ...prev, name: searchTerm }));
-                      setIsSearchOpen(false);
-                    }}
-                    className="text-sm text-primary font-medium hover:underline"
-                  >
-                    + Agregar alimento personalizado
-                  </button>
-                </div>
+                <p className="px-3 py-2 text-sm text-gray-500">No se encontraron alimentos</p>
               ) : (
                 filteredFoods.map((food) => (
                   <button
@@ -253,6 +239,17 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
             </div>
           )}
         </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowCustomFood(true);
+            setCustomFood((prev) => ({ ...prev, name: searchTerm }));
+          }}
+          className="text-sm text-primary font-medium hover:underline mt-1 inline-flex items-center gap-1"
+        >
+          + Agregar alimento personalizado
+        </button>
 
         {selectedFood && (
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
