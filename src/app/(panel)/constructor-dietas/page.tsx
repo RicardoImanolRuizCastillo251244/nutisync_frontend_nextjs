@@ -27,25 +27,9 @@ const DAY_LABELS = [
   'Domingo',
 ] as const;
 
-const getMealNamesByCount = (mealCount: number): string[] => {
-  if (mealCount === 3) {
-    return ['Desayuno', 'Comida', 'Cena'];
-  }
-
-  const defaultNames = [
-    'Desayuno',
-    'Colacion AM',
-    'Comida',
-    'Merienda',
-    'Cena',
-    'Colacion PM',
-    'Comida 7',
-  ];
-
-  return Array.from(
-    { length: mealCount },
-    (_, index) => defaultNames[index] ?? `Comida ${index + 1}`
-  );
+const getMealNamesByCount = (_mealCount: number): string[] => {
+  // Siempre 3 comidas: Desayuno, Comida, Cena
+  return ['Desayuno', 'Comida', 'Cena'];
 };
 
 const createEmptyMeals = (mealNames: readonly string[]): Meal[] =>
@@ -672,31 +656,16 @@ export default function ConstructorDietasPage() {
 
               <div className="mt-4">
                 <label className="block text-sm text-gray-700 mb-2">
-                  Comidas para {DAY_LABELS[selectedDayNumber - 1]} (3-7)
+                  Comidas para {DAY_LABELS[selectedDayNumber - 1]} (3)
                 </label>
                 <input
                   type="number"
-                  min={3}
-                  max={7}
-                  step={1}
-                  value={currentMealCount}
-                  onChange={(event) => {
-                    const nextCount = Number(event.target.value);
-                    if (Number.isNaN(nextCount)) return;
-                    handleMealCountChange(nextCount);
-                  }}
-                  className="panel-input w-full max-w-[110px]"
+                  value={3}
+                  disabled
+                  className="panel-input w-full max-w-[110px] opacity-60"
                 />
 
-                <label className="mt-6 flex items-center gap-2 text-sm text-gray-600">
-                  <input
-                    type="checkbox"
-                    checked={applyMealCountToAllDays}
-                    onChange={(event) => handleApplyMealCountToAllDaysChange(event.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
-                  />
-                  Aplicar este numero de comidas a todos los dias
-                </label>
+                <p className="mt-6 text-xs text-gray-500">3 comidas fijas: Desayuno, Comida y Cena.</p>
               </div>
 
               <div className="mt-4 space-y-3">
