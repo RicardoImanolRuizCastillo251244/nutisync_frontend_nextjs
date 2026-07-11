@@ -39,6 +39,19 @@ export const foodApi = {
    * @param query - Término de búsqueda (ej: "pollo", "manzana")
    * @returns Lista de alimentos encontrados
    */
+  calculateItem: async (params: {
+    name: string;
+    portion: string;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    grams: number;
+  }): Promise<Omit<import('@/src/core/entities/MealFoodItem').MealFoodItem, 'foodId'>> => {
+    const { data } = await axiosClient.post('/v1/meal-plans/calculate-item', params);
+    return data?.data ?? data;
+  },
+
   search: async (query: string): Promise<Food[]> => {
     if (!query.trim()) return [];
 
