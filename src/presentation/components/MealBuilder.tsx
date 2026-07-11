@@ -12,6 +12,24 @@ interface MealBuilderProps {
   onMealChange: (meal: Meal) => void;
 }
 
+interface CustomFoodForm {
+  name: string;
+  portion: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+const emptyCustomFood: CustomFoodForm = {
+  name: '',
+  portion: '',
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+};
+
 const createItemFromFood = (
   food: Food,
   quantity: number,
@@ -28,12 +46,32 @@ const createItemFromFood = (
   fat: Number((food.fat * quantity).toFixed(1)),
 });
 
+const createCustomItem = (
+  customFood: CustomFoodForm,
+  quantity: number,
+  unit: MealFoodItem['unit']
+): MealFoodItem => ({
+  foodId: `custom-${Date.now()}-${Math.random()}`,
+  foodName: customFood.name,
+  quantity,
+  unit,
+  portion: customFood.portion || '1 porción',
+  calories: Math.round(customFood.calories * quantity),
+  protein: Number((customFood.protein * quantity).toFixed(1)),
+  carbs: Number((customFood.carbs * quantity).toFixed(1)),
+  fat: Number((customFood.fat * quantity).toFixed(1)),
+});
+
 export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [unit, setUnit] = useState<MealFoodItem['unit']>('g');
+
+  // Custom food toggle
+  const [showCustomFood, setShowCustomFood] = useState(false);
+  const [customFood, setCustomFood] = useState<CustomFoodForm>(emptyCustomFood);
 
   // Debounce: solo buscar tras 350ms de inactividad
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -76,6 +114,17 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
     setSelectedFood(null);
     setQuantity(1);
     setUnit('g');
+  };
+
+  const handleAddCustomFood = () => {
+    if (!customFood.name.trim()) return;
+    const newItem = createCustomItem(customFood, 1, 'g');
+    onMealChange({
+      ...meal,
+      items: [...meal.items, newItem],
+    });
+    setCustomFood(emptyCustomFood);
+    setShowCustomFood(false);
   };
 
   const handleSelectFood = (food: Food) => {
@@ -172,7 +221,21 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
               {isSearching ? (
                 <p className="px-3 py-2 text-sm text-gray-400">Buscando...</p>
               ) : filteredFoods.length === 0 ? (
-                <p className="px-3 py-2 text-sm text-gray-500">No se encontraron alimentos</p>
+                <div className="px-3 py-2">
+                  <p className="text-sm text-gray-500 mb-2">No se encontraron alimentos</p>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      setShowCustomFood(true);
+                      setCustomFood((prev) => ({ ...prev, name: searchTerm }));
+                      setIsSearchOpen(false);
+                    }}
+                    className="text-sm text-primary font-medium hover:underline"
+                  >
+                    + Agregar alimento personalizado
+                  </button>
+                </div>
               ) : (
                 filteredFoods.map((food) => (
                   <button
@@ -238,6 +301,105 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                 className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
               >
                 Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showCustomFood && (
+          <div className="rounded-lg border border-dashed border-primary/50 bg-primary-light/20 p-3">
+            <p className="text-sm font-medium text-gray-800 mb-3">Alimento personalizado</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Nombre</label>
+                <input
+                  type="text"
+                  value={customFood.name}
+                  onChange={(e) => setCustomFood((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ej. Sushi casero"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Porción</label>
+                <input
+                  type="text"
+                  value={customFood.portion}
+                  onChange={(e) => setCustomFood((prev) => ({ ...prev, portion: e.target.value }))}
+                  placeholder="Ej. 100 g"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Calorías (kcal)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={customFood.calories}
+                  onChange={(e) => setCustomFood((prev) => ({ ...prev, calories: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Proteínas (g)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={customFood.protein}
+                  onChange={(e) => setCustomFood((prev) => ({ ...prev, protein: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Carbohidratos (g)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={customFood.carbs}
+                  onChange={(e) => setCustomFood((prev) => ({ ...prev, carbs: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Grasas (g)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={customFood.fat}
+                  onChange={(e) => setCustomFood((prev) => ({ ...prev, fat: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustomFood(false);
+                  setCustomFood(emptyCustomFood);
+                }}
+                className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleAddCustomFood}
+                disabled={!customFood.name.trim()}
+                className="px-3 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark disabled:opacity-60"
+              >
+                Agregar alimento personalizado
               </button>
             </div>
           </div>
