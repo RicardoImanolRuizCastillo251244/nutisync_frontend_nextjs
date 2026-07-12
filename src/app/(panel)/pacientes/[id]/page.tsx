@@ -234,7 +234,7 @@ export default function PatientDetailPage() {
     try {
       await updateRecord({
         id: formData.id,
-        updates: parsed.data,
+        updates: { ...parsed.data, patientId },
       });
       setDraftRecord(null);
       toast.success('Historia clínica actualizada');

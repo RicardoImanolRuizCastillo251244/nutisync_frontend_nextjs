@@ -181,13 +181,12 @@ export const clinicalRecordRepository: ClinicalRecordRepository = {
 
   async update(id, updates) {
     const { data } = await axiosClient.patch(`/v1/clinical-records/${id}`, {
+      patientId: updates.patientId,
       data: {
         ...(updates.name !== undefined ? { name: updates.name } : {}),
         ...(updates.sex !== undefined ? { sex: updates.sex } : {}),
         ...(updates.age !== undefined ? { age: updates.age } : {}),
-        ...(updates.education !== undefined ? { education: updates.education } : {}),
         ...(updates.occupation !== undefined ? { occupation: updates.occupation } : {}),
-        ...(updates.religion !== undefined ? { religion: updates.religion } : {}),
         ...(updates.bloodType !== undefined ? { bloodType: updates.bloodType } : {}),
         ...(updates.consultationReason !== undefined ? { consultationReason: updates.consultationReason } : {}),
         ...(updates.phone !== undefined ? { phone: updates.phone } : {}),
