@@ -94,7 +94,7 @@ export default function ClinicalRecordForm({
           <NumericField
             label="Peso (kg)"
             value={record.weight}
-            onChange={(value) => onChange('weight', value)}
+            readOnly
           />
           <TextField
             label="Estado civil"
@@ -126,7 +126,7 @@ export default function ClinicalRecordForm({
           <NumericField
             label="Estatura (cm)"
             value={record.height}
-            onChange={(value) => onChange('height', value)}
+            readOnly
           />
         </div>
       </SectionCard>
