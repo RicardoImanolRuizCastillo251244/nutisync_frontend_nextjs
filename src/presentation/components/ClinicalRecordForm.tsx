@@ -28,25 +28,16 @@ export default function ClinicalRecordForm({
           <TextField
             label="Nombre completo"
             value={record.name}
-            onChange={(value) => onChange('name', value)}
+            readOnly
           />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
-            <select
-              value={record.sex}
-              disabled
-              className="panel-select"
-            >
-              <option value="Masculino">Masculino</option>
-              <option value="Femenino">Femenino</option>
-              <option value="Otro">Otro</option>
-            </select>
-          </div>
+          <TextField
+            label="Sexo"
+            value={record.sex}
+            readOnly
+          />
           <NumericField
             label="Edad (años)"
             value={record.age}
-            step={1}
-            min={0}
             readOnly
           />
 
@@ -119,7 +110,7 @@ export default function ClinicalRecordForm({
         </div>
       </SectionCard>
 
-      <SectionCard title="Domicilio y medidas">
+      <SectionCard title="Domicilio">
         <TextField
           label="Domicilio"
           value={record.address}
