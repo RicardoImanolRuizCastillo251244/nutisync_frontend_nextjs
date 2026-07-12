@@ -22,7 +22,7 @@ function mapRecord(raw: ApiRecord): ClinicalRecord {
     createdAt: String(raw.createdAt ?? ''),
     updatedAt: String(raw.updatedAt ?? ''),
     name: String(d.name ?? ''),
-    sex: (d.sex as ClinicalRecord['sex']) ?? ('Otro' as ClinicalRecord['sex']),
+    sex: (d.gender === 'male' ? 'Masculino' : d.gender === 'female' ? 'Femenino' : 'Otro') as ClinicalRecord['sex'],
     age: Number(d.age ?? 0),
     education: String(d.education ?? ''),
     occupation: String(d.occupation ?? ''),
