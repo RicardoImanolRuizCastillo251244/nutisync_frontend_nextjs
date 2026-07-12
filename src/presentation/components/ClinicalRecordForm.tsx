@@ -42,19 +42,9 @@ export default function ClinicalRecordForm({
           />
 
           <TextField
-            label="Escolaridad"
-            value={record.education}
-            onChange={(value) => onChange('education', value)}
-          />
-          <TextField
             label="Ocupación"
             value={record.occupation}
             onChange={(value) => onChange('occupation', value)}
-          />
-          <TextField
-            label="Religión"
-            value={record.religion}
-            onChange={(value) => onChange('religion', value)}
           />
           <TextField
             label="Tipo de sangre"
@@ -255,131 +245,6 @@ export default function ClinicalRecordForm({
             value={record.physicalNails}
             onChange={(value) => onChange('physicalNails', value)}
           />
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Dieta habitual">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <NumericField
-            label="Comidas por día"
-            value={record.mealsPerDay}
-            step={1}
-            min={0}
-            onChange={(value) => onChange('mealsPerDay', value)}
-          />
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lugar de comidas</label>
-            <select
-              value={record.mealsPlace}
-              onChange={(event) =>
-                onChange('mealsPlace', event.target.value as ClinicalRecord['mealsPlace'])
-              }
-              className="panel-select"
-            >
-              <option value="Casa">Casa</option>
-              <option value="Fuera de casa">Fuera de casa</option>
-              <option value="Ambos">Ambos</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <CheckboxField
-              label="Consume picante"
-              checked={record.consumesSpicy}
-              onChange={(checked) => onChange('consumesSpicy', checked)}
-            />
-            <CheckboxField
-              label="Consume enlatados"
-              checked={record.consumesCanned}
-              onChange={(checked) => onChange('consumesCanned', checked)}
-            />
-            <CheckboxField
-              label="Agrega sal"
-              checked={record.consumesAddedSalt}
-              onChange={(checked) => onChange('consumesAddedSalt', checked)}
-            />
-            <CheckboxField
-              label="Consume azúcar"
-              checked={record.consumesSugar}
-              onChange={(checked) => onChange('consumesSugar', checked)}
-            />
-          </div>
-
-          <div className="md:col-span-3 rounded-lg border border-gray-200 p-4">
-            <p className="text-sm font-medium text-gray-700 mb-3">Grasas para cocinar</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-              <CheckboxField
-                label="Margarina"
-                checked={record.cookingFat.margarine}
-                onChange={(checked) =>
-                  onChange('cookingFat', {
-                    ...record.cookingFat,
-                    margarine: checked,
-                  })
-                }
-              />
-              <CheckboxField
-                label="Mantequilla"
-                checked={record.cookingFat.butter}
-                onChange={(checked) =>
-                  onChange('cookingFat', {
-                    ...record.cookingFat,
-                    butter: checked,
-                  })
-                }
-              />
-              <CheckboxField
-                label="Aceite vegetal"
-                checked={record.cookingFat.vegetableOil}
-                onChange={(checked) =>
-                  onChange('cookingFat', {
-                    ...record.cookingFat,
-                    vegetableOil: checked,
-                  })
-                }
-              />
-              <CheckboxField
-                label="Manteca"
-                checked={record.cookingFat.lard}
-                onChange={(checked) =>
-                  onChange('cookingFat', {
-                    ...record.cookingFat,
-                    lard: checked,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
-            <CheckboxField
-              label="¿Consume agua?"
-              checked={record.drinksWater}
-              onChange={(checked) => onChange('drinksWater', checked)}
-            />
-            <NumericField
-              label="Cantidad de agua (ml)"
-              value={record.waterAmountMl}
-              step={50}
-              min={0}
-              onChange={(value) => onChange('waterAmountMl', value)}
-            />
-            <CheckboxField
-              label="¿Realiza ejercicio?"
-              checked={record.exercises}
-              onChange={(checked) => onChange('exercises', checked)}
-            />
-            <TextField
-              label="Frecuencia del ejercicio"
-              value={record.exerciseFrequency}
-              onChange={(value) => onChange('exerciseFrequency', value)}
-            />
-            <TextField
-              label="Tiempo por sesión"
-              value={record.exerciseTime}
-              onChange={(value) => onChange('exerciseTime', value)}
-            />
-          </div>
         </div>
       </SectionCard>
 

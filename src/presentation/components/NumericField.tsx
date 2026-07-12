@@ -20,7 +20,7 @@ export default function NumericField({
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       <input
         type="number"
-        value={Number.isFinite(value) ? value : 0}
+        value={value}
         min={min}
         step={step}
         readOnly={readOnly}
