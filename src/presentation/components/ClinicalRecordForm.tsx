@@ -49,7 +49,7 @@ export default function ClinicalRecordForm({
             value={record.age}
             step={1}
             min={0}
-            onChange={(value) => onChange('age', value)}
+            readOnly
           />
 
           <TextField
@@ -96,6 +96,11 @@ export default function ClinicalRecordForm({
             value={record.weight}
             readOnly
           />
+          <NumericField
+            label="Estatura (cm)"
+            value={record.height}
+            readOnly
+          />
           <TextField
             label="Estado civil"
             value={record.maritalStatus}
@@ -117,18 +122,11 @@ export default function ClinicalRecordForm({
       </SectionCard>
 
       <SectionCard title="Domicilio y medidas">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextField
-            label="Domicilio"
-            value={record.address}
-            onChange={(value) => onChange('address', value)}
-          />
-          <NumericField
-            label="Estatura (cm)"
-            value={record.height}
-            readOnly
-          />
-        </div>
+        <TextField
+          label="Domicilio"
+          value={record.address}
+          onChange={(value) => onChange('address', value)}
+        />
       </SectionCard>
 
       <SectionCard title="Antecedentes heredofamiliares">
@@ -396,10 +394,7 @@ export default function ClinicalRecordForm({
         </div>
       </SectionCard>
 
-      <SectionCard
-        title="Resultados calculados (simulacion)"
-        description="TODO: Reemplazar con llamada al backend real."
-      >
+      <SectionCard title="Resultados calculados">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <NumericField label="IMC" value={record.bmi} readOnly />
           <TextField label="Clasificacion IMC" value={record.bmiClassification} readOnly />
@@ -413,14 +408,6 @@ export default function ClinicalRecordForm({
       </SectionCard>
 
       <div className="flex flex-wrap gap-3 justify-end">
-        <button
-          type="button"
-          onClick={onRecalculate}
-          className="btn-brand-outline"
-          disabled={isSaving}
-        >
-          Recalcular métricas
-        </button>
         <button
           type="button"
           onClick={onSave}
