@@ -34,9 +34,7 @@ export default function ClinicalRecordForm({
             <label className="block text-sm font-medium text-gray-700 mb-1">Sexo</label>
             <select
               value={record.sex}
-              onChange={(event) =>
-                onChange('sex', event.target.value as ClinicalRecord['sex'])
-              }
+              disabled
               className="panel-select"
             >
               <option value="Masculino">Masculino</option>
