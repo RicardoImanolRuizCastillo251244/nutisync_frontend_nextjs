@@ -161,6 +161,11 @@ export const dietPlanRepository: DietPlanRepository = {
     return toAssignment(raw);
   },
 
+  async unassignPlan(planId, patientId, nutritionistId) {
+    void nutritionistId;
+    await axiosClient.post(`/v1/meal-plans/${planId}/unassign`, { patientId });
+  },
+
   async getAssignmentsByPatient(patientId, nutritionistId) {
     void nutritionistId;
     const { data } = await axiosClient.get(`/v1/meal-plans/patients/${patientId}/assignments`);

@@ -21,6 +21,11 @@ export interface DietPlanRepository {
     patientId: string,
     nutritionistId: string
   ): Promise<PatientPlanAssignment>;
+  unassignPlan(
+    planId: string,
+    patientId: string,
+    nutritionistId: string
+  ): Promise<void>;
   getAssignmentsByPatient(
     patientId: string,
     nutritionistId: string

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useClinicalRecord } from '@/src/adapters/useClinicalRecord';
 import { usePatientActivePlan } from '@/src/adapters/usePatientActivePlan';
 import { usePatients } from '@/src/adapters/usePatients';
@@ -13,6 +14,7 @@ import SectionCard from '@/src/presentation/components/SectionCard';
 import { clinicalRecordFormSchema } from '@/src/utils/validations';
 import type { Patient } from '@/src/core/entities/Patient';
 import { calculateClinicalMetrics } from '@/src/utils/clinicalCalculations';
+import { dietPlanRepository } from '@/src/infrastructure/repositories/DietPlanRepositoryImpl';
 
 const getAge = (birthDate: string): number => {
   const now = new Date();
@@ -122,6 +124,7 @@ export default function PatientDetailPage() {
   const rawId = params?.id;
   const patientId = Array.isArray(rawId) ? rawId[0] ?? '' : rawId ?? '';
 
+  const queryClient = useQueryClient();
   const { patients, isLoading: isLoadingPatients } = usePatients();
   const {
     latestRecord,
@@ -133,6 +136,18 @@ export default function PatientDetailPage() {
     isUpdating,
   } = useClinicalRecord(patientId);
   const { data: activePlan, isLoading: isLoadingPlan } = usePatientActivePlan(patientId);
+
+  const unassignPlanMutation = useMutation({
+    mutationFn: (params: { planId: string; patientId: string }) =>
+      dietPlanRepository.unassignPlan(params.planId, params.patientId, 'nutritionist'),
+    onSuccess: () => {
+      toast.success('Plan descartado correctamente');
+      queryClient.invalidateQueries({ queryKey: ['activePlan'] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Error al descartar plan');
+    },
+  });
 
   const patient = useMemo(() => patients.find((item) => item.id === patientId) ?? null, [patients, patientId]);
   const defaultRecord = useMemo(
@@ -173,7 +188,6 @@ export default function PatientDetailPage() {
     if (!formData) return;
 
     try {
-      // TODO: Reemplazar con llamada al backend real.
       const calculated = calculateClinicalMetrics({
         weight: formData.weight,
         height: formData.height,
@@ -199,7 +213,6 @@ export default function PatientDetailPage() {
   const handleSave = async () => {
     if (!formData) return;
 
-    // TODO: Reemplazar con llamada al backend real.
     const calculated = calculateClinicalMetrics({
       weight: formData.weight,
       height: formData.height,
@@ -269,12 +282,27 @@ export default function PatientDetailPage() {
               <p className="text-sm text-gray-500">Plan actual</p>
               <p className="font-semibold text-gray-800">{activePlan.name}</p>
             </div>
-            <Link
-              href={`/constructor-dietas?planId=${activePlan.id}`}
-              className="btn-brand-outline"
-            >
-              Editar plan
-            </Link>
+            <div className="flex gap-2">
+              <Link
+                href={`/constructor-dietas?planId=${activePlan.id}`}
+                className="btn-brand-outline"
+              >
+                Editar plan
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  const confirmed = window.confirm(`¿Descartar el plan "${activePlan.name}"?`);
+                  if (confirmed) {
+                    void unassignPlanMutation.mutateAsync({ planId: activePlan.id, patientId });
+                  }
+                }}
+                disabled={unassignPlanMutation.isPending}
+                className="btn-brand-danger"
+              >
+                {unassignPlanMutation.isPending ? 'Descartando...' : 'Descartar plan'}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
