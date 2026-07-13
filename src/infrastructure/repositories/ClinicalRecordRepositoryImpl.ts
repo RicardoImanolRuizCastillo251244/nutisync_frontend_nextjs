@@ -210,6 +210,7 @@ export const clinicalRecordRepository: ClinicalRecordRepository = {
     if (updates.phone !== undefined) payload.phone = updates.phone;
     if (updates.weight !== undefined) payload.weightKg = updates.weight;
     if (updates.maritalStatus !== undefined) payload.maritalStatus = updates.maritalStatus;
+    if (updates.date !== undefined) payload.date = updates.date;
     if (updates.allergies !== undefined) payload.allergies = updates.allergies;
     const { data } = await axiosClient.patch(`/v1/clinical-records/${id}`, payload);
     const raw = (data?.data ?? data) as ApiRecord;
