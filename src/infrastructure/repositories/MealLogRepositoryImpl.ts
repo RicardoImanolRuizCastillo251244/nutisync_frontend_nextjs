@@ -1,54 +1,71 @@
 import type { MealLog } from '../../core/entities/MealLog';
 import type { MealLogRepository } from '../../core/ports/MealLogRepository';
-import { loadFromLocalStorage, saveToLocalStorage } from '../storage/localStorageService';
-import { STORAGE_KEYS } from '../storage/storageKeys';
+import axiosClient from '../api/axiosClient';
 
-const loadLogs = (): MealLog[] =>
-  loadFromLocalStorage<MealLog[]>(STORAGE_KEYS.mealLogs, []);
-const saveLogs = (logs: MealLog[]): void =>
-  saveToLocalStorage(STORAGE_KEYS.mealLogs, logs);
+type ApiMealLog = {
+  id: string;
+  patientUserId: string;
+  planId?: string | null;
+  mealName: string;
+  date: string;
+  consumed: boolean;
+  consumedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+const mapLog = (raw: ApiMealLog): MealLog => ({
+  id: raw.id,
+  patientId: raw.patientUserId,
+  planId: raw.planId ?? '',
+  mealName: raw.mealName,
+  date: raw.date,
+  consumed: raw.consumed,
+  consumedAt: raw.consumedAt ?? null,
+  voiceNoteId: null,
+  createdAt: raw.createdAt,
+  updatedAt: raw.updatedAt,
+});
 
 export const mealLogRepository: MealLogRepository = {
   async getByPatient(patientId) {
-    const logs = loadLogs();
-    return logs.filter((l) => l.patientId === patientId);
+    const { data } = await axiosClient.get(`/v1/adherence/meals?patientId=${patientId}`);
+    const rawLogs: ApiMealLog[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    return rawLogs.map(mapLog);
   },
 
   async getByPatientAndDate(patientId, date) {
-    const logs = loadLogs();
-    return logs.filter((l) => l.patientId === patientId && l.date === date);
+    const { data } = await axiosClient.get(`/v1/adherence/meals?patientId=${patientId}&date=${date}`);
+    const rawLogs: ApiMealLog[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    return rawLogs.map(mapLog);
   },
 
   async getByPatientAndPlan(patientId, planId) {
-    const logs = loadLogs();
-    return logs.filter((l) => l.patientId === patientId && l.planId === planId);
+    const { data } = await axiosClient.get(`/v1/adherence/meals?patientId=${patientId}&planId=${planId}`);
+    const rawLogs: ApiMealLog[] = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+    return rawLogs.map(mapLog);
   },
 
   async create(log) {
-    const logs = loadLogs();
-    const now = new Date().toISOString();
-    const newLog: MealLog = {
-      ...log,
-      id: crypto.randomUUID(),
-      createdAt: now,
-      updatedAt: now,
-    };
-    saveLogs([...logs, newLog]);
-    return newLog;
+    const { data } = await axiosClient.post('/v1/adherence/meals', {
+      patientId: log.patientId,
+      planId: log.planId,
+      mealName: log.mealName,
+      date: log.date,
+      consumed: log.consumed,
+      consumedAt: log.consumedAt,
+    });
+    const raw = data?.data ?? data;
+    return mapLog(raw);
   },
 
   async update(id, updates) {
-    const logs = loadLogs();
-    const index = logs.findIndex((l) => l.id === id);
-    if (index === -1) throw new Error('Registro no encontrado');
-    const updated = { ...logs[index], ...updates, updatedAt: new Date().toISOString() };
-    logs[index] = updated;
-    saveLogs(logs);
-    return updated;
+    const { data } = await axiosClient.patch(`/v1/adherence/meals/${id}`, updates);
+    const raw = data?.data ?? data;
+    return mapLog(raw);
   },
 
   async delete(id) {
-    const logs = loadLogs();
-    saveLogs(logs.filter((l) => l.id !== id));
+    await axiosClient.delete(`/v1/adherence/meals/${id}`);
   },
 };

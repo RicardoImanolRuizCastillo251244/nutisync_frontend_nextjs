@@ -1,41 +1,84 @@
 import type { AdherenceRecord } from '../../core/entities/AdherenceRecord';
 import type { AdherenceRepository } from '../../core/ports/AdherenceRepository';
-import { loadFromLocalStorage, saveToLocalStorage } from '../storage/localStorageService';
-import { STORAGE_KEYS } from '../storage/storageKeys';
+import axiosClient from '../api/axiosClient';
 
-const loadRecords = (): AdherenceRecord[] =>
-  loadFromLocalStorage<AdherenceRecord[]>(STORAGE_KEYS.adherence, []);
-const saveRecords = (records: AdherenceRecord[]): void =>
-  saveToLocalStorage(STORAGE_KEYS.adherence, records);
+type ApiAdherenceSummary = {
+  meals?: unknown[];
+  hydration?: unknown[];
+  mood?: unknown[];
+};
 
 export const adherenceRepository: AdherenceRepository = {
   async getByPatient(patientId) {
-    const records = loadRecords();
-    return records.filter((r) => r.patientId === patientId);
+    const { data } = await axiosClient.get(`/v1/adherence/summary/${patientId}?days=30`);
+    const summary = (data?.data ?? data) as ApiAdherenceSummary;
+    const meals = (summary?.meals ?? []) as Array<{ date?: string; consumed?: boolean }>;
+    const records: AdherenceRecord[] = [];
+
+    // Group meals by date and build adherence records
+    const byDate = new Map<string, { consumed: number; total: number }>();
+    meals.forEach((meal) => {
+      const d = meal.date ?? '';
+      if (!d) return;
+      const entry = byDate.get(d) ?? { consumed: 0, total: 0 };
+      entry.total += 1;
+      if (meal.consumed) entry.consumed += 1;
+      byDate.set(d, entry);
+    });
+
+    byDate.forEach((value, date) => {
+      records.push({
+        id: `adherence-${date}`,
+        patientId,
+        date,
+        mealCompliance: value.consumed,
+        waterIntake: 0,
+        mood: 3,
+        medicationsTaken: false,
+      });
+    });
+
+    return records;
   },
 
   async getByPatientAndDate(patientId, date) {
-    const records = loadRecords();
-    return records.find((r) => r.patientId === patientId && r.date === date) ?? null;
+    const records = await this.getByPatient(patientId);
+    return records.find((r) => r.date === date) ?? null;
   },
 
   async create(record) {
-    const records = loadRecords();
-    const newRecord: AdherenceRecord = {
+    const { data } = await axiosClient.post('/v1/adherence/hydration', {
+      patientId: record.patientId,
+      amountMl: record.waterIntake * 250,
+    });
+    return {
+      id: (data?.data ?? data)?.id ?? crypto.randomUUID(),
       ...record,
-      id: crypto.randomUUID(),
     };
-    saveRecords([...records, newRecord]);
-    return newRecord;
   },
 
   async update(id, updates) {
-    const records = loadRecords();
-    const index = records.findIndex((r) => r.id === id);
-    if (index === -1) throw new Error('Registro no encontrado');
-    const updated = { ...records[index], ...updates };
-    records[index] = updated;
-    saveRecords(records);
-    return updated;
+    if (updates.mealCompliance !== undefined) {
+      // Meal compliance is derived from meal logs — no direct update needed
+    }
+    if (updates.waterIntake !== undefined) {
+      await axiosClient.post('/v1/adherence/hydration', {
+        amountMl: updates.waterIntake * 250,
+      });
+    }
+    if (updates.mood !== undefined) {
+      await axiosClient.post('/v1/adherence/mood', {
+        mood: updates.mood,
+      });
+    }
+    return {
+      id,
+      patientId: updates.patientId ?? '',
+      date: '',
+      mealCompliance: updates.mealCompliance ?? 0,
+      waterIntake: updates.waterIntake ?? 0,
+      mood: updates.mood ?? 3,
+      medicationsTaken: updates.medicationsTaken ?? false,
+    };
   },
 };
