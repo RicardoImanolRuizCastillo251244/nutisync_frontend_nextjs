@@ -22,7 +22,7 @@ const mapLog = (raw: ApiMealLog): MealLog => ({
   date: raw.date,
   consumed: raw.consumed,
   consumedAt: raw.consumedAt ?? undefined,
-  voiceNoteId: null,
+  voiceNoteId: undefined,
   createdAt: raw.createdAt,
   updatedAt: raw.updatedAt,
 });
