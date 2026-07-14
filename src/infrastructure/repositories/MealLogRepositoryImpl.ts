@@ -19,7 +19,7 @@ const mapLog = (raw: ApiMealLog): MealLog => ({
   patientId: raw.patientUserId,
   planId: raw.planId ?? '',
   mealName: raw.mealName,
-  date: raw.date,
+  date: raw.date?.slice(0, 10) ?? raw.date,
   consumed: raw.consumed,
   consumedAt: raw.consumedAt ?? undefined,
   voiceNoteId: undefined,
