@@ -6,7 +6,6 @@ import { useAdherence } from '@/src/adapters/useAdherence';
 import { useMealLogs } from '@/src/adapters/useMealLogs';
 import { usePatientActivePlan } from '@/src/adapters/usePatientActivePlan';
 import { usePatients } from '@/src/adapters/usePatients';
-import { useVoiceNote } from '@/src/adapters/useVoiceNote';
 import AdherenceCharts, {
   type AdherenceChartPoint,
 } from '@/src/presentation/components/AdherenceCharts';
@@ -43,11 +42,22 @@ const getDayNumberFromDate = (isoDate: string) => {
   return jsDay === 0 ? 7 : jsDay;
 };
 
+type RangeDays = 1 | 7 | 30 | -1; // -1 = desde siempre
+
 export default function AdherenciaPage() {
   const { patients, isLoading: isPatientsLoading } = usePatients();
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
-  const [rangeDays, setRangeDays] = useState(30);
+  const [rangeDays, setRangeDays] = useState<RangeDays>(30);
+
+  const selectedPatient = useMemo(
+    () => patients.find((p) => p.id === selectedPatientId) ?? null,
+    [patients, selectedPatientId]
+  );
+
+  const minDate = selectedPatient?.createdAt
+    ? formatDate(new Date(selectedPatient.createdAt))
+    : '2020-01-01';
 
   const { data: activePlan, isLoading: isPlanLoading } = usePatientActivePlan(selectedPatientId);
   const {
@@ -62,12 +72,7 @@ export default function AdherenciaPage() {
   const {
     records: adherenceRecords,
     isLoading: isAdherenceLoading,
-    createRecord,
-    updateRecord,
-    isCreating: isCreatingAdherence,
-    isUpdating: isUpdatingAdherence,
   } = useAdherence(selectedPatientId);
-  const { createNote } = useVoiceNote(null);
 
   const mealsByDayNumber = useMemo(
     () => new Map((activePlan?.days ?? []).map((day) => [day.dayNumber, day.meals])),
@@ -79,7 +84,11 @@ export default function AdherenciaPage() {
     [mealsByDayNumber, selectedDate]
   );
 
-  const rangeStartDate = useMemo(() => dateDaysAgo(Math.max(0, rangeDays - 1)), [rangeDays]);
+  const rangeStartDate = useMemo(() => {
+    if (rangeDays === -1) return minDate;
+    return dateDaysAgo(Math.max(0, rangeDays - 1));
+  }, [rangeDays, minDate]);
+
   const dateSeries = useMemo(
     () => getDateSeries(rangeStartDate, selectedDate),
     [rangeStartDate, selectedDate]
@@ -153,31 +162,6 @@ export default function AdherenciaPage() {
   const isLoading =
     isPatientsLoading || isPlanLoading || isLogsLoading || isAdherenceLoading;
 
-  const syncAdherenceForDate = async (date: string) => {
-    const logsOnDate = allLogs.filter((log) => log.date === date);
-    const consumedCount = logsOnDate.filter((log) => log.consumed).length;
-    const existing = recordsByDate.get(date);
-
-    if (existing) {
-      await updateRecord({
-        id: existing.id,
-        updates: {
-          mealCompliance: consumedCount,
-        },
-      });
-      return;
-    }
-
-    await createRecord({
-      patientId: selectedPatientId,
-      date,
-      mealCompliance: consumedCount,
-      waterIntake: 0,
-      mood: 3,
-      medicationsTaken: false,
-    });
-  };
-
   const handleToggleConsumed = async (row: MealLogRow) => {
     if (!selectedPatientId || !activePlan) {
       toast.error('Selecciona un paciente con plan activo para registrar adherencia');
@@ -205,7 +189,6 @@ export default function AdherenciaPage() {
         });
       }
 
-      await syncAdherenceForDate(selectedDate);
       toast.success('Registro de comida actualizado');
     } catch (mutationError) {
       const message =
@@ -216,57 +199,15 @@ export default function AdherenciaPage() {
     }
   };
 
-  const handleGenerateMockData = async () => {
-    if (!selectedPatientId || !activePlan) {
-      toast.error('Selecciona paciente y plan activo para generar datos mock');
-      return;
+  const rangeLabel = useMemo(() => {
+    switch (rangeDays) {
+      case 1: return 'Hoy';
+      case 7: return 'Últimos 7 días';
+      case 30: return 'Últimos 30 días';
+      case -1: return 'Desde siempre';
+      default: return '';
     }
-
-    try {
-      for (let day = 6; day >= 0; day -= 1) {
-        const date = dateDaysAgo(day);
-        const mealsForDate = mealsByDayNumber.get(getDayNumberFromDate(date)) ?? [];
-
-        for (const meal of mealsForDate) {
-          const consumed = Math.random() > 0.25;
-          let voiceNoteId: string | undefined;
-
-          if (consumed && Math.random() > 0.75) {
-            const voiceNote = await createNote({
-              patientId: selectedPatientId,
-              mealLogId: '',
-              audioData: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-              duration: 8,
-            });
-            voiceNoteId = voiceNote.id;
-          }
-
-          await createLog({
-            patientId: selectedPatientId,
-            planId: activePlan.id,
-            mealName: meal.name,
-            date,
-            consumed,
-            consumedAt: consumed ? new Date().toISOString() : undefined,
-            voiceNoteId,
-          });
-        }
-
-        await createRecord({
-          patientId: selectedPatientId,
-          date,
-          mealCompliance: Math.floor(Math.random() * (mealsForDate.length + 1)),
-          waterIntake: 4 + Math.floor(Math.random() * 6),
-          mood: 1 + Math.floor(Math.random() * 5),
-          medicationsTaken: Math.random() > 0.3,
-        });
-      }
-
-      toast.success('Datos mock de adherencia generados (temporal)');
-    } catch {
-      toast.error('No se pudieron generar los datos mock');
-    }
-  };
+  }, [rangeDays]);
 
   return (
     <section className="space-y-5">
@@ -292,10 +233,11 @@ export default function AdherenciaPage() {
         </div>
 
         <div className="panel-card p-4">
-          <label className="block text-sm text-gray-700 mb-2">Dia especifico</label>
+          <label className="block text-sm text-gray-700 mb-2">Día específico</label>
           <input
             type="date"
             value={selectedDate}
+            min={minDate}
             onChange={(event) => setSelectedDate(event.target.value)}
             className="panel-input"
           />
@@ -303,14 +245,52 @@ export default function AdherenciaPage() {
 
         <div className="panel-card p-4">
           <label className="block text-sm text-gray-700 mb-2">Rango</label>
-          <select
-            value={rangeDays}
-            onChange={(event) => setRangeDays(Number(event.target.value))}
-            className="panel-select"
-          >
-            <option value={7}>Ultimos 7 dias</option>
-            <option value={30}>Ultimos 30 dias</option>
-          </select>
+          <div className="flex flex-wrap gap-1">
+            <button
+              type="button"
+              onClick={() => setRangeDays(1)}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                rangeDays === 1
+                  ? 'bg-[#24B38A] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Hoy
+            </button>
+            <button
+              type="button"
+              onClick={() => setRangeDays(7)}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                rangeDays === 7
+                  ? 'bg-[#24B38A] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              7d
+            </button>
+            <button
+              type="button"
+              onClick={() => setRangeDays(30)}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                rangeDays === 30
+                  ? 'bg-[#24B38A] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              30d
+            </button>
+            <button
+              type="button"
+              onClick={() => setRangeDays(-1)}
+              className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
+                rangeDays === -1
+                  ? 'bg-[#24B38A] text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Todos
+            </button>
+          </div>
         </div>
       </div>
 
@@ -328,24 +308,14 @@ export default function AdherenciaPage() {
 
       {!isLoading && selectedPatientId && (
         <div className="panel-card p-4 mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm text-gray-500">Resumen de adherencia ({rangeDays} dias)</p>
-              <p className="text-2xl font-bold text-primary mt-1">
-                {summary.adherencePct.toFixed(1)}%
-              </p>
-              <p className="text-sm text-gray-600 mt-1">
-                {summary.consumedTotal} comidas consumidas de {summary.expectedTotal} esperadas
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void handleGenerateMockData()}
-              className="btn-brand"
-            >
-              Generar datos mock
-            </button>
+          <div>
+            <p className="text-sm text-gray-500">Resumen de adherencia ({rangeLabel})</p>
+            <p className="text-2xl font-bold text-primary mt-1">
+              {summary.adherencePct.toFixed(1)}%
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              {summary.consumedTotal} comidas consumidas de {summary.expectedTotal} esperadas
+            </p>
           </div>
         </div>
       )}
@@ -358,7 +328,7 @@ export default function AdherenciaPage() {
             date={selectedDate}
             rows={dailyRows}
             onToggleConsumed={(row) => void handleToggleConsumed(row)}
-            isUpdating={isCreatingLog || isUpdatingLog || isCreatingAdherence || isUpdatingAdherence}
+            isUpdating={isCreatingLog || isUpdatingLog}
           />
         </div>
       )}

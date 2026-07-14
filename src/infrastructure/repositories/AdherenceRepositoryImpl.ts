@@ -10,19 +10,44 @@ type ApiAdherenceSummary = {
 
 export const adherenceRepository: AdherenceRepository = {
   async getByPatient(patientId) {
-    const { data } = await axiosClient.get(`/v1/adherence/summary/${patientId}?days=30`);
-    const summary = (data?.data ?? data) as ApiAdherenceSummary;
-    const meals = (summary?.meals ?? []) as Array<{ date?: string; consumed?: boolean }>;
-    const records: AdherenceRecord[] = [];
+    // Obtener summary + meals + hydration + mood del backend
+    const [summaryRes, mealsRes, hydrationRes, moodRes] = await Promise.all([
+      axiosClient.get(`/v1/adherence/summary/${patientId}?days=30`),
+      axiosClient.get(`/v1/adherence/meals?patientId=${patientId}`),
+      axiosClient.get(`/v1/adherence/hydration?patientId=${patientId}`),
+      axiosClient.get(`/v1/adherence/mood?patientId=${patientId}`),
+    ]);
 
-    // Group meals by date and build adherence records
-    const byDate = new Map<string, { consumed: number; total: number }>();
+    const meals = (Array.isArray(mealsRes.data?.data) ? mealsRes.data.data : Array.isArray(mealsRes.data) ? mealsRes.data : []) as Array<{ date?: string; consumed?: boolean }>;
+    const hydrations = (Array.isArray(hydrationRes.data?.data) ? hydrationRes.data.data : Array.isArray(hydrationRes.data) ? hydrationRes.data : []) as Array<{ date?: string; amountMl?: number }>;
+    const moods = (Array.isArray(moodRes.data?.data) ? moodRes.data.data : Array.isArray(moodRes.data) ? moodRes.data : []) as Array<{ date?: string; mood?: string }>;
+
+    const records: AdherenceRecord[] = [];
+    const byDate = new Map<string, { consumed: number; total: number; water: number; mood: number; moodCount: number }>();
+
     meals.forEach((meal) => {
       const d = meal.date ?? '';
       if (!d) return;
-      const entry = byDate.get(d) ?? { consumed: 0, total: 0 };
+      const entry = byDate.get(d) ?? { consumed: 0, total: 0, water: 0, mood: 0, moodCount: 0 };
       entry.total += 1;
       if (meal.consumed) entry.consumed += 1;
+      byDate.set(d, entry);
+    });
+
+    hydrations.forEach((h) => {
+      const d = h.date ?? '';
+      if (!d) return;
+      const entry = byDate.get(d) ?? { consumed: 0, total: 0, water: 0, mood: 0, moodCount: 0 };
+      entry.water += h.amountMl ?? 0;
+      byDate.set(d, entry);
+    });
+
+    moods.forEach((m) => {
+      const d = m.date ?? '';
+      if (!d) return;
+      const entry = byDate.get(d) ?? { consumed: 0, total: 0, water: 0, mood: 0, moodCount: 0 };
+      entry.mood += Number(m.mood ?? 3);
+      entry.moodCount += 1;
       byDate.set(d, entry);
     });
 
@@ -32,8 +57,8 @@ export const adherenceRepository: AdherenceRepository = {
         patientId,
         date,
         mealCompliance: value.consumed,
-        waterIntake: 0,
-        mood: 3,
+        waterIntake: value.water,
+        mood: value.moodCount > 0 ? value.mood / value.moodCount : 3,
         medicationsTaken: false,
       });
     });
@@ -58,9 +83,6 @@ export const adherenceRepository: AdherenceRepository = {
   },
 
   async update(id, updates) {
-    if (updates.mealCompliance !== undefined) {
-      // Meal compliance is derived from meal logs — no direct update needed
-    }
     if (updates.waterIntake !== undefined) {
       await axiosClient.post('/v1/adherence/hydration', {
         amountMl: updates.waterIntake * 250,
