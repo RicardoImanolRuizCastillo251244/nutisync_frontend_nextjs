@@ -42,22 +42,14 @@ const getDayNumberFromDate = (isoDate: string) => {
   return jsDay === 0 ? 7 : jsDay;
 };
 
-type RangeDays = 1 | 7 | 30 | -1; // -1 = desde siempre
+type RangeDays = 1 | 7 | 30 | -1;
+
+const today = formatDate(new Date());
 
 export default function AdherenciaPage() {
   const { patients, isLoading: isPatientsLoading } = usePatients();
   const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
   const [rangeDays, setRangeDays] = useState<RangeDays>(30);
-
-  const selectedPatient = useMemo(
-    () => patients.find((p) => p.id === selectedPatientId) ?? null,
-    [patients, selectedPatientId]
-  );
-
-  const minDate = selectedPatient?.createdAt
-    ? formatDate(new Date(selectedPatient.createdAt))
-    : '2020-01-01';
 
   const { data: activePlan, isLoading: isPlanLoading } = usePatientActivePlan(selectedPatientId);
   const {
@@ -68,7 +60,7 @@ export default function AdherenciaPage() {
     isCreating: isCreatingLog,
     isUpdating: isUpdatingLog,
   } = useMealLogs(selectedPatientId);
-  const { logs: dayLogs } = useMealLogs(selectedPatientId, selectedDate);
+  const { logs: dayLogs } = useMealLogs(selectedPatientId, today);
   const {
     records: adherenceRecords,
     isLoading: isAdherenceLoading,
@@ -80,23 +72,23 @@ export default function AdherenciaPage() {
   );
 
   const expectedMeals = useMemo(
-    () => mealsByDayNumber.get(getDayNumberFromDate(selectedDate)) ?? [],
-    [mealsByDayNumber, selectedDate]
+    () => mealsByDayNumber.get(getDayNumberFromDate(today)) ?? [],
+    [mealsByDayNumber]
   );
 
   const rangeStartDate = useMemo(() => {
-    if (rangeDays === -1) return minDate;
+    if (rangeDays === -1) return '2020-01-01';
     return dateDaysAgo(Math.max(0, rangeDays - 1));
-  }, [rangeDays, minDate]);
+  }, [rangeDays]);
 
   const dateSeries = useMemo(
-    () => getDateSeries(rangeStartDate, selectedDate),
-    [rangeStartDate, selectedDate]
+    () => getDateSeries(rangeStartDate, today),
+    [rangeStartDate]
   );
 
   const filteredLogs = useMemo(
-    () => allLogs.filter((log) => log.date >= rangeStartDate && log.date <= selectedDate),
-    [allLogs, rangeStartDate, selectedDate]
+    () => allLogs.filter((log) => log.date >= rangeStartDate && log.date <= today),
+    [allLogs, rangeStartDate]
   );
 
   const recordsByDate = useMemo(
@@ -183,7 +175,7 @@ export default function AdherenciaPage() {
           patientId: selectedPatientId,
           planId: activePlan.id,
           mealName: row.mealName,
-          date: selectedDate,
+          date: today,
           consumed: true,
           consumedAt: new Date().toISOString(),
         });
@@ -215,7 +207,7 @@ export default function AdherenciaPage() {
         Adherencia
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px_220px] gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 mb-6">
         <div className="panel-card p-4">
           <label className="block text-sm text-gray-700 mb-2">Paciente</label>
           <select
@@ -230,17 +222,6 @@ export default function AdherenciaPage() {
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="panel-card p-4">
-          <label className="block text-sm text-gray-700 mb-2">Día específico</label>
-          <input
-            type="date"
-            value={selectedDate}
-            min={minDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
-            className="panel-input"
-          />
         </div>
 
         <div className="panel-card p-4">
@@ -325,7 +306,7 @@ export default function AdherenciaPage() {
           <AdherenceCharts data={chartData} />
 
           <MealLogList
-            date={selectedDate}
+            date={today}
             rows={dailyRows}
             onToggleConsumed={(row) => void handleToggleConsumed(row)}
             isUpdating={isCreatingLog || isUpdatingLog}
