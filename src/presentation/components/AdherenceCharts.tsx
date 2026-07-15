@@ -37,7 +37,7 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-72">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Comidas consumidas vs esperadas</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Comidas consumidas</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -46,7 +46,6 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
             <Tooltip />
             <Legend />
             <Bar dataKey="consumed" name="Consumidas" fill="#24B38A" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="expected" name="Esperadas" fill="#E5E7EB" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
