@@ -11,7 +11,12 @@ import AdherenceCharts, {
 } from '@/src/presentation/components/AdherenceCharts';
 import MealLogList, { type MealLogRow } from '@/src/presentation/components/MealLogList';
 
-const formatDate = (date: Date) => date.toISOString().slice(0, 10);
+const formatDate = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 const dateDaysAgo = (days: number) => {
   const date = new Date();
@@ -25,8 +30,8 @@ const dateLabel = (isoDate: string) => {
 };
 
 const getDateSeries = (startDate: string, endDate: string): string[] => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = new Date(`${startDate}T12:00:00`);
+  const end = new Date(`${endDate}T12:00:00`);
   const dates: string[] = [];
 
   while (start <= end) {
@@ -44,12 +49,22 @@ const getDayNumberFromDate = (isoDate: string) => {
 
 type RangeDays = 1 | 7 | 30 | -1;
 
-const today = formatDate(new Date());
+const todayLocal = formatDate(new Date());
 
 export default function AdherenciaPage() {
   const { patients, isLoading: isPatientsLoading } = usePatients();
   const [selectedPatientId, setSelectedPatientId] = useState('');
-  const [rangeDays, setRangeDays] = useState<RangeDays>(30);
+  const [selectedDate, setSelectedDate] = useState(todayLocal);
+  const [rangeDays, setRangeDays] = useState<RangeDays>(1);
+
+  const selectedPatient = useMemo(
+    () => patients.find((p) => p.id === selectedPatientId) ?? null,
+    [patients, selectedPatientId]
+  );
+
+  const minDate = selectedPatient?.createdAt
+    ? formatDate(new Date(selectedPatient.createdAt))
+    : '2020-01-01';
 
   const { data: activePlan, isLoading: isPlanLoading } = usePatientActivePlan(selectedPatientId);
   const {
@@ -60,7 +75,7 @@ export default function AdherenciaPage() {
     isCreating: isCreatingLog,
     isUpdating: isUpdatingLog,
   } = useMealLogs(selectedPatientId);
-  const { logs: dayLogs } = useMealLogs(selectedPatientId, today);
+  const { logs: dayLogs } = useMealLogs(selectedPatientId, selectedDate);
   const {
     records: adherenceRecords,
     isLoading: isAdherenceLoading,
@@ -72,23 +87,24 @@ export default function AdherenciaPage() {
   );
 
   const expectedMeals = useMemo(
-    () => mealsByDayNumber.get(getDayNumberFromDate(today)) ?? [],
-    [mealsByDayNumber]
+    () => mealsByDayNumber.get(getDayNumberFromDate(selectedDate)) ?? [],
+    [mealsByDayNumber, selectedDate]
   );
 
   const rangeStartDate = useMemo(() => {
-    if (rangeDays === -1) return '2020-01-01';
+    if (rangeDays === -1) return minDate;
+    if (rangeDays === 1) return selectedDate;
     return dateDaysAgo(Math.max(0, rangeDays - 1));
-  }, [rangeDays]);
+  }, [rangeDays, minDate, selectedDate]);
 
   const dateSeries = useMemo(
-    () => getDateSeries(rangeStartDate, today),
-    [rangeStartDate]
+    () => getDateSeries(rangeStartDate, selectedDate),
+    [rangeStartDate, selectedDate]
   );
 
   const filteredLogs = useMemo(
-    () => allLogs.filter((log) => log.date >= rangeStartDate && log.date <= today),
-    [allLogs, rangeStartDate]
+    () => allLogs.filter((log) => log.date >= rangeStartDate && log.date <= selectedDate),
+    [allLogs, rangeStartDate, selectedDate]
   );
 
   const recordsByDate = useMemo(
@@ -175,7 +191,7 @@ export default function AdherenciaPage() {
           patientId: selectedPatientId,
           planId: activePlan.id,
           mealName: row.mealName,
-          date: today,
+          date: selectedDate,
           consumed: true,
           consumedAt: new Date().toISOString(),
         });
@@ -193,13 +209,13 @@ export default function AdherenciaPage() {
 
   const rangeLabel = useMemo(() => {
     switch (rangeDays) {
-      case 1: return 'Hoy';
+      case 1: return selectedDate === todayLocal ? 'Hoy' : selectedDate;
       case 7: return 'Últimos 7 días';
       case 30: return 'Últimos 30 días';
       case -1: return 'Desde siempre';
       default: return '';
     }
-  }, [rangeDays]);
+  }, [rangeDays, selectedDate]);
 
   return (
     <section className="space-y-5">
@@ -207,7 +223,7 @@ export default function AdherenciaPage() {
         Adherencia
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_200px_280px] gap-4 mb-6">
         <div className="panel-card p-4">
           <label className="block text-sm text-gray-700 mb-2">Paciente</label>
           <select
@@ -225,13 +241,30 @@ export default function AdherenciaPage() {
         </div>
 
         <div className="panel-card p-4">
+          <label className="block text-sm text-gray-700 mb-2">Día específico</label>
+          <input
+            type="date"
+            value={selectedDate}
+            min={minDate}
+            onChange={(event) => {
+              setSelectedDate(event.target.value);
+              setRangeDays(1);
+            }}
+            className="panel-input"
+          />
+        </div>
+
+        <div className="panel-card p-4">
           <label className="block text-sm text-gray-700 mb-2">Rango</label>
           <div className="flex flex-wrap gap-1">
             <button
               type="button"
-              onClick={() => setRangeDays(1)}
+              onClick={() => {
+                setSelectedDate(todayLocal);
+                setRangeDays(1);
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
-                rangeDays === 1
+                rangeDays === 1 && selectedDate === todayLocal
                   ? 'bg-[#24B38A] text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -240,7 +273,10 @@ export default function AdherenciaPage() {
             </button>
             <button
               type="button"
-              onClick={() => setRangeDays(7)}
+              onClick={() => {
+                setSelectedDate(todayLocal);
+                setRangeDays(7);
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 rangeDays === 7
                   ? 'bg-[#24B38A] text-white'
@@ -251,7 +287,10 @@ export default function AdherenciaPage() {
             </button>
             <button
               type="button"
-              onClick={() => setRangeDays(30)}
+              onClick={() => {
+                setSelectedDate(todayLocal);
+                setRangeDays(30);
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 rangeDays === 30
                   ? 'bg-[#24B38A] text-white'
@@ -262,7 +301,10 @@ export default function AdherenciaPage() {
             </button>
             <button
               type="button"
-              onClick={() => setRangeDays(-1)}
+              onClick={() => {
+                setSelectedDate(todayLocal);
+                setRangeDays(-1);
+              }}
               className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 rangeDays === -1
                   ? 'bg-[#24B38A] text-white'
@@ -306,7 +348,7 @@ export default function AdherenciaPage() {
           <AdherenceCharts data={chartData} />
 
           <MealLogList
-            date={today}
+            date={selectedDate}
             rows={dailyRows}
             onToggleConsumed={(row) => void handleToggleConsumed(row)}
             isUpdating={isCreatingLog || isUpdatingLog}
