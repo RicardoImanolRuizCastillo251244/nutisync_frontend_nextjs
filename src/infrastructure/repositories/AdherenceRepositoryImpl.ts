@@ -19,7 +19,7 @@ export const adherenceRepository: AdherenceRepository = {
     ]);
 
     const meals = (Array.isArray(mealsRes.data?.data) ? mealsRes.data.data : Array.isArray(mealsRes.data) ? mealsRes.data : []) as Array<{ date?: string; consumed?: boolean }>;
-    const hydrations = (Array.isArray(hydrationRes.data?.data) ? hydrationRes.data.data : Array.isArray(hydrationRes.data) ? hydrationRes.data : []) as Array<{ date?: string; amountMl?: number }>;
+    const hydrations = (Array.isArray(hydrationRes.data?.data) ? hydrationRes.data.data : Array.isArray(hydrationRes.data) ? hydrationRes.data : []) as Array<{ date?: string; loggedAt?: string; amountMl?: number }>;
     const moods = (Array.isArray(moodRes.data?.data) ? moodRes.data.data : Array.isArray(moodRes.data) ? moodRes.data : []) as Array<{ date?: string; mood?: string }>;
 
     const records: AdherenceRecord[] = [];
@@ -35,7 +35,7 @@ export const adherenceRepository: AdherenceRepository = {
     });
 
     hydrations.forEach((h) => {
-      const d = h.date ?? '';
+      const d = h.date ?? (h.loggedAt ? h.loggedAt.slice(0, 10) : '');
       if (!d) return;
       const entry = byDate.get(d) ?? { consumed: 0, total: 0, water: 0, mood: 0, moodCount: 0 };
       entry.water += h.amountMl ?? 0;
