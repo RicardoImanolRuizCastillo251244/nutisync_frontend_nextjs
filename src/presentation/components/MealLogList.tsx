@@ -60,8 +60,10 @@ export default function MealLogList({ date, rows, onToggleConsumed, isUpdating }
                       <p className="text-xs text-gray-500 mb-1">
                         Nota de voz {voiceDuration != null ? `(${voiceDuration}s)` : ''}
                       </p>
-                      <audio controls className="w-full h-8">
+                      <audio controls className="w-full h-8" preload="metadata">
+                        <source src={voiceUrl} type="audio/m4a" />
                         <source src={voiceUrl} type="audio/mp4" />
+                        <source src={voiceUrl} />
                         Tu navegador no soporta audio.
                       </audio>
                     </div>
