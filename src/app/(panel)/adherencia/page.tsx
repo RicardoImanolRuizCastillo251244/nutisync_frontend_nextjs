@@ -163,7 +163,8 @@ export default function AdherenciaPage() {
 
     return expectedMeals.map((meal) => ({
       mealName: meal.name,
-      log: dayLogByMealName.get(meal.name),
+      mealId: meal.id,
+      log: dayLogByMealName.get(meal.id),
     }));
   }, [dayLogs, expectedMeals]);
 
@@ -190,7 +191,7 @@ export default function AdherenciaPage() {
         await createLog({
           patientId: selectedPatientId,
           planId: activePlan.id,
-          mealName: row.mealName,
+          mealName: (row as any).mealId ?? row.mealName,
           date: selectedDate,
           consumed: true,
           consumedAt: new Date().toISOString(),
