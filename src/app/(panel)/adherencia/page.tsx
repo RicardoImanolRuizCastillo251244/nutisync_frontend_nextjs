@@ -154,6 +154,9 @@ export default function AdherenciaPage() {
   const dailyRows = useMemo<MealLogRow[]>(() => {
     const dayLogByMealName = new Map(dayLogs.map((log) => [log.mealName, log]));
 
+    console.log('web-debug meals:', expectedMeals.map(m => ({id: m.id, name: m.name})));
+    console.log('web-debug dayLogs:', dayLogs.map(l => ({mealName: l.mealName, consumed: l.consumed})));
+
     if (expectedMeals.length === 0) {
       return dayLogs.map((log) => ({
         mealName: log.mealName,
@@ -161,11 +164,16 @@ export default function AdherenciaPage() {
       }));
     }
 
-    return expectedMeals.map((meal) => ({
-      mealName: meal.name,
-      mealId: meal.id,
-      log: dayLogByMealName.get(meal.id),
-    }));
+    const rows = expectedMeals.map((meal) => {
+      const matchedLog = dayLogByMealName.get(meal.id);
+      console.log(`web-debug match: meal.id=${meal.id} meal.name=${meal.name} -> ${matchedLog ? 'FOUND consumed='+matchedLog.consumed : 'NOT FOUND'}`);
+      return {
+        mealName: meal.name,
+        mealId: meal.id,
+        log: matchedLog,
+      };
+    });
+    return rows;
   }, [dayLogs, expectedMeals]);
 
   const isLoading =
