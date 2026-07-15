@@ -218,6 +218,18 @@ export default function AdherenciaPage() {
     }
   };
 
+  const waterGoalMl = 2000;
+  const waterGoalGlasses = 8;
+
+  const todayRecord = useMemo(
+    () => recordsByDate.get(selectedDate),
+    [recordsByDate, selectedDate]
+  );
+
+  const waterIntakeMl = todayRecord?.waterIntake ?? 0;
+  const waterGlasses = Math.round(waterIntakeMl / 250);
+  const waterProgress = Math.min(waterIntakeMl / waterGoalMl, 1) * 100;
+
   const rangeLabel = useMemo(() => {
     switch (rangeDays) {
       case 1: return selectedDate === todayLocal ? 'Hoy' : selectedDate;
@@ -364,6 +376,52 @@ export default function AdherenciaPage() {
             onToggleConsumed={(row) => void handleToggleConsumed(row)}
             isUpdating={isCreatingLog || isUpdatingLog}
           />
+
+          <div className="panel-card p-4">
+            <h3 className="text-base font-semibold text-gray-800 mb-4">
+              Hidratación
+            </h3>
+
+            <div className="flex items-end gap-3 mb-2">
+              <span className="text-3xl font-bold text-blue-600">
+                {waterGlasses}
+              </span>
+              <span className="text-sm text-gray-500 mb-1">
+                / {waterGoalGlasses} vasos
+              </span>
+              <span className="text-sm text-gray-400 ml-auto">
+                {waterIntakeMl} ml de {waterGoalMl} ml
+              </span>
+            </div>
+
+            <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(waterProgress, 100)}%` }}
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-4">
+              {Array.from({ length: waterGoalGlasses }, (_, i) => (
+                <div
+                  key={i}
+                  className={`w-8 h-10 rounded-md flex items-center justify-center text-xs font-medium ${
+                    i < waterGlasses
+                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                      : 'bg-gray-50 text-gray-400 border border-gray-200'
+                  }`}
+                >
+                  💧
+                </div>
+              ))}
+            </div>
+
+            {waterIntakeMl === 0 && (
+              <p className="text-xs text-gray-400 mt-3">
+                El paciente no ha registrado consumo de agua para esta fecha.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
