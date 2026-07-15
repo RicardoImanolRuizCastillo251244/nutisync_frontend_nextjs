@@ -152,28 +152,29 @@ export default function AdherenciaPage() {
   }, [dateSeries, filteredLogs, mealsByDayNumber, recordsByDate]);
 
   const dailyRows = useMemo<MealLogRow[]>(() => {
-    const dayLogByMealName = new Map(dayLogs.map((log) => [log.mealName, log]));
-
-    console.log('web-debug meals:', expectedMeals.map(m => ({id: m.id, name: m.name})));
-    console.log('web-debug dayLogs:', dayLogs.map(l => ({mealName: l.mealName, consumed: l.consumed})));
+    // El backend ya deduplica y prioriza consumed=true, pero mantenemos
+    // la lógica defensiva por si acaso
+    const dayLogByMealName = new Map<string, typeof dayLogs[0]>();
+    for (const log of dayLogs) {
+      const existing = dayLogByMealName.get(log.mealName);
+      if (!existing || log.consumed) {
+        dayLogByMealName.set(log.mealName, log);
+      }
+    }
 
     if (expectedMeals.length === 0) {
       return dayLogs.map((log) => ({
         mealName: log.mealName,
+        mealId: log.mealName,
         log,
       }));
     }
 
-    const rows = expectedMeals.map((meal) => {
-      const matchedLog = dayLogByMealName.get(meal.id);
-      console.log(`web-debug match: meal.id=${meal.id} meal.name=${meal.name} -> ${matchedLog ? 'FOUND consumed='+matchedLog.consumed : 'NOT FOUND'}`);
-      return {
-        mealName: meal.name,
-        mealId: meal.id,
-        log: matchedLog,
-      };
-    });
-    return rows;
+    return expectedMeals.map((meal) => ({
+      mealName: meal.name,
+      mealId: meal.id,
+      log: dayLogByMealName.get(meal.id),
+    }));
   }, [dayLogs, expectedMeals]);
 
   const isLoading =
@@ -196,10 +197,11 @@ export default function AdherenciaPage() {
           },
         });
       } else {
+        const mealId = (row as { mealId?: string }).mealId ?? row.mealName;
         await createLog({
           patientId: selectedPatientId,
           planId: activePlan.id,
-          mealName: (row as any).mealId ?? row.mealName,
+          mealName: mealId,
           date: selectedDate,
           consumed: true,
           consumedAt: new Date().toISOString(),
