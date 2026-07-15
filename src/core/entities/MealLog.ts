@@ -1,12 +1,14 @@
 export interface MealLog {
   id: string;
   patientId: string;
-  planId: string; // referencia al plan activo en ese momento
-  mealName: string; // 'Desayuno', 'Comida', etc.
-  date: string; // YYYY-MM-DD
+  planId: string;
+  mealName: string;
+  date: string;
   consumed: boolean;
-  consumedAt?: string; // timestamp
-  voiceNoteId?: string; // referencia a VoiceNote (si envió nota)
+  consumedAt?: string;
+  substituteNote?: string;
+  voiceNoteUrl?: string;
+  voiceNoteDurationSec?: number;
   createdAt: string;
   updatedAt: string;
 }

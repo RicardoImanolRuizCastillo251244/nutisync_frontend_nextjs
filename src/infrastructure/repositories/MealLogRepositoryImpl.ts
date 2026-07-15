@@ -2,30 +2,43 @@ import type { MealLog } from '../../core/entities/MealLog';
 import type { MealLogRepository } from '../../core/ports/MealLogRepository';
 import axiosClient from '../api/axiosClient';
 
+type ApiVoiceNote = {
+  id?: string;
+  publicUrl?: string;
+  durationSec?: number;
+};
+
 type ApiMealLog = {
   id: string;
   patientUserId: string;
   planId?: string | null;
   mealName: string;
+  note?: string | null;
   date: string;
   consumed: boolean;
   consumedAt?: string | null;
+  voiceNotes?: ApiVoiceNote[];
   createdAt: string;
   updatedAt: string;
 };
 
-const mapLog = (raw: ApiMealLog): MealLog => ({
-  id: raw.id,
-  patientId: raw.patientUserId,
-  planId: raw.planId ?? '',
-  mealName: raw.mealName,
-  date: raw.date?.slice(0, 10) ?? raw.date,
-  consumed: raw.consumed,
-  consumedAt: raw.consumedAt ?? undefined,
-  voiceNoteId: undefined,
-  createdAt: raw.createdAt,
-  updatedAt: raw.updatedAt,
-});
+const mapLog = (raw: ApiMealLog): MealLog => {
+  const voiceNote = raw.voiceNotes?.[0];
+  return {
+    id: raw.id,
+    patientId: raw.patientUserId,
+    planId: raw.planId ?? '',
+    mealName: raw.mealName,
+    date: raw.date?.slice(0, 10) ?? raw.date,
+    consumed: raw.consumed,
+    consumedAt: raw.consumedAt ?? undefined,
+    substituteNote: raw.note ?? undefined,
+    voiceNoteUrl: voiceNote?.publicUrl,
+    voiceNoteDurationSec: voiceNote?.durationSec,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
+  };
+};
 
 export const mealLogRepository: MealLogRepository = {
   async getByPatient(patientId) {
@@ -51,6 +64,7 @@ export const mealLogRepository: MealLogRepository = {
       patientId: log.patientId,
       planId: log.planId,
       mealName: log.mealName,
+      note: log.substituteNote,
       date: log.date,
       consumed: log.consumed,
       consumedAt: log.consumedAt,
