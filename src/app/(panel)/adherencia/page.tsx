@@ -130,13 +130,13 @@ export default function AdherenciaPage() {
     return dateSeries.map((date) => {
       const dayLogsForDate = logsByDate.get(date) ?? [];
       const consumed = dayLogsForDate.filter((log) => log.consumed).length;
-      const expected = mealsByDayNumber.get(getDayNumberFromDate(date))?.length || 1;
-      const compliancePct = (consumed / expected) * 100;
+      const expected = mealsByDayNumber.get(getDayNumberFromDate(date))?.length || 0;
       const adherenceForDay = recordsByDate.get(date);
 
       return {
         date: dateLabel(date),
-        mealCompliancePct: Number(compliancePct.toFixed(1)),
+        consumed,
+        expected,
         waterIntake: adherenceForDay?.waterIntake ?? 0,
         mood: adherenceForDay?.mood ?? 1,
       };

@@ -15,7 +15,8 @@ import {
 
 export interface AdherenceChartPoint {
   date: string;
-  mealCompliancePct: number;
+  consumed: number;
+  expected: number;
   waterIntake: number;
   mood: number;
 }
@@ -36,22 +37,17 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-72">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Cumplimiento de comidas (%)</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Comidas consumidas vs esperadas</h3>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
+          <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
-            <YAxis domain={[0, 100]} />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             <Legend />
-            <Line
-              type="monotone"
-              dataKey="mealCompliancePct"
-              name="Cumplimiento"
-              stroke="var(--color-primary)"
-              strokeWidth={2}
-            />
-          </LineChart>
+            <Bar dataKey="consumed" name="Consumidas" fill="#24B38A" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="expected" name="Esperadas" fill="#E5E7EB" radius={[4, 4, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
 
