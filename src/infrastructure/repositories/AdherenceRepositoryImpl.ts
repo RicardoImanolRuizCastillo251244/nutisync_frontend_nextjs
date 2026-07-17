@@ -20,7 +20,7 @@ export const adherenceRepository: AdherenceRepository = {
 
     const meals = (Array.isArray(mealsRes.data?.data) ? mealsRes.data.data : Array.isArray(mealsRes.data) ? mealsRes.data : []) as Array<{ date?: string; consumed?: boolean }>;
     const hydrations = (Array.isArray(hydrationRes.data?.data) ? hydrationRes.data.data : Array.isArray(hydrationRes.data) ? hydrationRes.data : []) as Array<{ date?: string; loggedAt?: string; amountMl?: number }>;
-    const moods = (Array.isArray(moodRes.data?.data) ? moodRes.data.data : Array.isArray(moodRes.data) ? moodRes.data : []) as Array<{ date?: string; mood?: string }>;
+    const moods = (Array.isArray(moodRes.data?.data) ? moodRes.data.data : Array.isArray(moodRes.data) ? moodRes.data : []) as Array<{ date?: string; loggedAt?: string; mood?: string }>;
 
     const records: AdherenceRecord[] = [];
     const byDate = new Map<string, { consumed: number; total: number; water: number; mood: number; moodCount: number }>();
@@ -42,12 +42,16 @@ export const adherenceRepository: AdherenceRepository = {
       byDate.set(d, entry);
     });
 
+    const moodMap: Record<string, number> = { excellent: 4, good: 3, neutral: 2, bad: 1 };
     moods.forEach((m) => {
-      const d = m.date ?? '';
+      const d = m.date ?? (m.loggedAt ? m.loggedAt.slice(0, 10) : '');
       if (!d) return;
       const entry = byDate.get(d) ?? { consumed: 0, total: 0, water: 0, mood: 0, moodCount: 0 };
-      entry.mood += Number(m.mood ?? 3);
-      entry.moodCount += 1;
+      const moodValue = moodMap[m.mood ?? ''] ?? 0;
+      if (moodValue > 0) {
+        entry.mood += moodValue;
+        entry.moodCount += 1;
+      }
       byDate.set(d, entry);
     });
 

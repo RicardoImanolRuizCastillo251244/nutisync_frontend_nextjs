@@ -64,18 +64,27 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
         </ResponsiveContainer>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-4 h-72">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Estado emocional (1-5)</h3>
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="bg-white border border-gray-200 rounded-xl p-4 h-80">
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Estado emocional (1-4)</h3>
+        <ResponsiveContainer width="100%" height="80%">
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
-            <YAxis domain={[1, 5]} />
-            <Tooltip />
-            <Legend />
+            <YAxis
+              domain={[0.5, 4.5]}
+              ticks={[1, 2, 3, 4]}
+              tickFormatter={(v) => ['', 'Mal', 'Neutral', 'Bien', 'Excelente'][v]}
+            />
+            <Tooltip formatter={(value: any) => ['😟 Mal', '😐 Neutral', '🙂 Bien', '😊 Excelente'][(value as number) - 1] ?? value} />
             <Line type="monotone" dataKey="mood" name="Estado" stroke="#0ea5e9" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
+        <div className="flex justify-center gap-4 mt-2 text-xs text-gray-500">
+          <span>😟 Mal</span>
+          <span>😐 Neutral</span>
+          <span>🙂 Bien</span>
+          <span>😊 Excelente</span>
+        </div>
       </div>
     </div>
   );
