@@ -10,6 +10,7 @@ import AdherenceCharts, {
   type AdherenceChartPoint,
 } from '@/src/presentation/components/AdherenceCharts';
 import MealLogList, { type MealLogRow } from '@/src/presentation/components/MealLogList';
+import type { AdherenceRecord } from '@/src/core/entities/AdherenceRecord';
 
 const formatDate = (date: Date) => {
   const y = date.getFullYear();
@@ -112,6 +113,12 @@ export default function AdherenciaPage() {
     [adherenceRecords]
   );
 
+  const moodNotes = useMemo(() => {
+    return adherenceRecords
+      .filter((r) => r.moodNote)
+      .map((r) => ({ date: r.date, note: r.moodNote!, mood: r.mood }));
+  }, [adherenceRecords]);
+
   const summary = useMemo(() => {
     const expectedTotal = dateSeries.reduce(
       (total, date) => total + (mealsByDayNumber.get(getDayNumberFromDate(date))?.length ?? 0),
@@ -152,8 +159,6 @@ export default function AdherenciaPage() {
   }, [dateSeries, filteredLogs, mealsByDayNumber, recordsByDate]);
 
   const dailyRows = useMemo<MealLogRow[]>(() => {
-    // El backend ya deduplica y prioriza consumed=true, pero mantenemos
-    // la lógica defensiva por si acaso
     const dayLogByMealName = new Map<string, typeof dayLogs[0]>();
     for (const log of dayLogs) {
       const existing = dayLogByMealName.get(log.mealName);
@@ -227,6 +232,8 @@ export default function AdherenciaPage() {
       default: return '';
     }
   }, [rangeDays, selectedDate]);
+
+  const moodEmojiMap: Record<number, string> = { 4: '😊', 3: '🙂', 2: '😐', 1: '😟' };
 
   return (
     <section className="space-y-5">
@@ -357,6 +364,23 @@ export default function AdherenciaPage() {
       {!isLoading && selectedPatientId && (
         <div className="space-y-6">
           <AdherenceCharts data={chartData} />
+
+          {moodNotes.length > 0 && (
+            <div className="panel-card p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Notas de estado de ánimo</h3>
+              <div className="space-y-2">
+                {moodNotes.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                    <span className="text-lg">{moodEmojiMap[item.mood] ?? '😐'}</span>
+                    <div>
+                      <span className="text-xs text-gray-500">{item.date}</span>
+                      <p className="text-sm text-gray-700">{item.note}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <MealLogList
             date={selectedDate}
