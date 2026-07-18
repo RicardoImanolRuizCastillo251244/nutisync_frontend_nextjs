@@ -393,10 +393,11 @@ export default function ConstructorDietasPage() {
 
     try {
       toast.info('Generando plan sugerido desde Edamam...');
-      const backendMeals = (await dietPlanApi.generateSuggested({
+      const response = (await dietPlanApi.generateSuggested({
         caloriesTarget: targetCalories,
-      })) as Array<{ name: string; items: Array<Record<string, unknown>> }>;
+      })) as { meals?: Array<{ name: string; totalCalories: number; ingredients: string; items: Array<Record<string, unknown>> }>; totalCalories?: number };
 
+      const backendMeals = response?.meals;
       if (!Array.isArray(backendMeals) || backendMeals.length === 0) {
         toast.error('No se recibieron comidas del backend');
         return;
@@ -409,13 +410,14 @@ export default function ConstructorDietasPage() {
 
         return {
           ...meal,
+          note: backendMeal.ingredients ? `🧂 Ingredientes: ${backendMeal.ingredients}` : '',
           items: backendMeal.items.map((item) => ({
             foodId: `suggested-${Date.now()}-${Math.random()}`,
-            foodName: String(item.name ?? ''),
+            foodName: String(item.name ?? backendMeal.name),
             quantity: 1,
             unit: 'g' as const,
-            portion: String(item.portion ?? '100 g'),
-            calories: Math.round(Number(item.calories ?? 0)),
+            portion: String(item.portion ?? '1 platillo'),
+            calories: Math.round(Number(item.calories ?? backendMeal.totalCalories)),
             protein: Number(Number(item.protein ?? 0).toFixed(1)),
             carbs: Number(Number(item.carbs ?? 0).toFixed(1)),
             fat: Number(Number(item.fat ?? 0).toFixed(1)),
