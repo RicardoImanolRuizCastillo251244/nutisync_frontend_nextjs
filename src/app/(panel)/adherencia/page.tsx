@@ -113,11 +113,12 @@ export default function AdherenciaPage() {
     [adherenceRecords]
   );
 
+  // Bug 2: Filtrar moodNotes solo del rango seleccionado
   const moodNotes = useMemo(() => {
     return adherenceRecords
-      .filter((r) => r.moodNote)
+      .filter((r) => r.moodNote && r.date >= rangeStartDate && r.date <= selectedDate)
       .map((r) => ({ date: r.date, note: r.moodNote!, mood: r.mood }));
-  }, [adherenceRecords]);
+  }, [adherenceRecords, rangeStartDate, selectedDate]);
 
   const summary = useMemo(() => {
     const expectedTotal = dateSeries.reduce(
@@ -134,6 +135,7 @@ export default function AdherenciaPage() {
     };
   }, [dateSeries, filteredLogs, mealsByDayNumber]);
 
+  // Bug 1: mood usa null (no 0) cuando no hay registro de estado de ánimo
   const chartData = useMemo<AdherenceChartPoint[]>(() => {
     const logsByDate = new Map<string, typeof filteredLogs>();
     filteredLogs.forEach((log) => {
@@ -153,7 +155,7 @@ export default function AdherenciaPage() {
         consumed,
         expected,
         waterIntake: adherenceForDay?.waterIntake ?? 0,
-        mood: adherenceForDay?.mood ?? 1,
+        mood: adherenceForDay?.mood ?? null,
       };
     });
   }, [dateSeries, filteredLogs, mealsByDayNumber, recordsByDate]);

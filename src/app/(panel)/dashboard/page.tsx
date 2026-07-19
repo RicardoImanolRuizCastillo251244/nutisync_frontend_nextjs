@@ -96,7 +96,7 @@ export default function DashboardPage() {
       <div className="panel-card p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-gray-700">
-            Adherencia por paciente ({rangeLabel()})
+            Adherencia total ({rangeLabel()})
           </h3>
           <div className="flex gap-1">
             <button

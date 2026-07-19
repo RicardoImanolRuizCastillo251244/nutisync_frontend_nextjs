@@ -18,7 +18,7 @@ export interface AdherenceChartPoint {
   consumed: number;
   expected: number;
   waterIntake: number;
-  mood: number;
+  mood: number | null;
 }
 
 interface AdherenceChartsProps {
@@ -75,7 +75,10 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
               ticks={[1, 2, 3, 4]}
               tickFormatter={(v) => ['', 'Mal', 'Neutral', 'Bien', 'Excelente'][v]}
             />
-            <Tooltip formatter={(value: any) => ['😟 Mal', '😐 Neutral', '🙂 Bien', '😊 Excelente'][(value as number) - 1] ?? value} />
+            <Tooltip formatter={(value: any) => {
+              if (value == null) return 'Sin registro';
+              return ['😟 Mal', '😐 Neutral', '🙂 Bien', '😊 Excelente'][(value as number) - 1] ?? value;
+            }} />
             <Line type="monotone" dataKey="mood" name="Estado" stroke="#0ea5e9" strokeWidth={2} />
           </LineChart>
         </ResponsiveContainer>
