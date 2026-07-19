@@ -195,7 +195,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-sm bg-[#EF4444]" />
-            <span><50% Baja</span>
+            <span>0-49% Baja</span>
           </div>
         </div>
       </div>
