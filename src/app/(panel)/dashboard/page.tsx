@@ -156,30 +156,16 @@ export default function DashboardPage() {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data?.patientAdherence ?? []} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+            <BarChart data={[{ name: 'Adherencia total', adherence: data?.averageAdherence ?? 0 }]} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                dataKey="patientName"
-                tick={{ fontSize: 11, fill: '#6b7280' }}
-                interval={0}
-                angle={-20}
-                textAnchor="end"
-                height={60}
-              />
+              <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#6b7280' }} />
               <YAxis
                 domain={[0, 100]}
                 tick={{ fontSize: 11, fill: '#6b7280' }}
                 tickFormatter={(v) => `${v}%`}
               />
-              <Tooltip
-                formatter={(value: any) => [`${value}%`, 'Adherencia']}
-                labelFormatter={(label) => `Paciente: ${label}`}
-              />
-              <Bar dataKey="adherence" radius={[6, 6, 0, 0]} maxBarSize={50}>
-                {(data?.patientAdherence ?? []).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getBarColor(entry.adherence)} />
-                ))}
-              </Bar>
+              <Tooltip formatter={(value: any) => [`${value}%`, 'Adherencia total']} />
+              <Bar dataKey="adherence" radius={[8, 8, 0, 0]} maxBarSize={80} fill={getBarColor(data?.averageAdherence ?? 0)} />
             </BarChart>
           </ResponsiveContainer>
         )}
