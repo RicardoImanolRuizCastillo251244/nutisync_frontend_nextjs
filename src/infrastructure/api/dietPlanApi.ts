@@ -13,9 +13,7 @@ export const dietPlanApi = {
         { caloriesTarget: input.caloriesTarget }
       );
 
-      const responseData = data?.data ?? data;
-      const meals = Array.isArray(responseData?.meals) ? responseData.meals : (Array.isArray(responseData) ? responseData : []);
-      return meals;
+      return data?.data ?? data;
     } catch (error) {
       const axiosError = error as AxiosError<{ error?: { message?: string } }>;
       const serverMessage =
