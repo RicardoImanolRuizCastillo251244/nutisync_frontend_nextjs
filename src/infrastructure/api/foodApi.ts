@@ -8,10 +8,13 @@ export interface EdamamFoodResponse {
   carbs: number;
   fat: number;
   portion?: string;
-  imageUrl?: string;
-  sourceUrl?: string;
-  healthLabels?: string[];
-  dietLabels?: string[];
+    imageUrl?: string;
+    sourceUrl?: string;
+    healthLabels?: string[];
+    dietLabels?: string[];
+    type?: string;
+    ingredients?: Array<{ ingredientId?: number; name: string; quantity: number; unit: string; calories?: number; protein?: number; carbs?: number; fat?: number }>;
+    description?: string;
 }
 
 /**
@@ -30,6 +33,9 @@ function mapFood(raw: EdamamFoodResponse, index: number): Food {
     sourceUrl: raw.sourceUrl ?? null,
     healthLabels: raw.healthLabels ?? [],
     dietLabels: raw.dietLabels ?? [],
+    type: (raw as { type?: string }).type ?? null,
+    ingredients: (raw as { ingredients?: Array<{ ingredientId?: number; name: string; quantity: number; unit: string }> }).ingredients ?? null,
+    description: (raw as { description?: string }).description ?? null,
   };
 }
 

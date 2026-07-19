@@ -261,7 +261,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm text-gray-800 truncate">
                           {food.name}
-                          {(food as any).type === 'dish' && (
+                          {food.type === 'dish' && (
                             <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-700 font-medium">Platillo</span>
                           )}
                         </p>
@@ -269,7 +269,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                           <span className="text-xs text-gray-500">{food.portion}</span>
                           <span className="text-xs font-medium text-primary">{Math.round(food.calories)} kcal</span>
                         </div>
-                        {(food as any).ingredients && Array.isArray((food as any).ingredients) && (
+                        {food.ingredients && food.ingredients.length > 0 && (
                           <div className="mt-1">
                             <button
                               type="button"
@@ -284,7 +284,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                             </button>
                             {expandedDishId === food.id && (
                               <div className="mt-1.5 space-y-1 pl-1">
-                                {(food as any).ingredients.map((i: any, idx: number) => (
+                                {food.ingredients!.map((i, idx) => (
                                   <div key={idx} className="flex items-center justify-between text-[10px] text-gray-500">
                                     <span>• {i.name}</span>
                                     <span className="text-gray-400">{i.quantity} {i.unit}</span>
