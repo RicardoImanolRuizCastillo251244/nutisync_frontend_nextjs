@@ -45,6 +45,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
   const [showCustomFood, setShowCustomFood] = useState(false);
   const [customFood, setCustomFood] = useState<CustomFoodForm>(emptyCustomFood);
   const [customGrams, setCustomGrams] = useState(100);
+  const [expandedDishId, setExpandedDishId] = useState<string | null>(null);
 
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -269,9 +270,29 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                           <span className="text-xs font-medium text-primary">{Math.round(food.calories)} kcal</span>
                         </div>
                         {(food as any).ingredients && Array.isArray((food as any).ingredients) && (
-                          <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">
-                            {(food as any).ingredients.map((i: any) => i.name).join(', ')}
-                          </p>
+                          <div className="mt-1">
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedDishId(expandedDishId === food.id ? null : food.id);
+                              }}
+                              className="text-[10px] text-purple-600 font-medium hover:underline"
+                            >
+                              {expandedDishId === food.id ? '▲ Ocultar ingredientes' : '▼ Ver ingredientes'}
+                            </button>
+                            {expandedDishId === food.id && (
+                              <div className="mt-1.5 space-y-1 pl-1">
+                                {(food as any).ingredients.map((i: any, idx: number) => (
+                                  <div key={idx} className="flex items-center justify-between text-[10px] text-gray-500">
+                                    <span>• {i.name}</span>
+                                    <span className="text-gray-400">{i.quantity} {i.unit}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
