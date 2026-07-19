@@ -392,7 +392,7 @@ export default function ConstructorDietasPage() {
     if (!selectedDay) return;
 
     try {
-      toast.info('Generando plan sugerido desde Edamam...');
+      toast.info('Generando plan sugerido con MexiNutri...');
       const response = (await dietPlanApi.generateSuggested({
         caloriesTarget: targetCalories,
       })) as { meals?: Array<{ name: string; totalCalories: number; ingredients: string; items: Array<Record<string, unknown>> }>; totalCalories?: number };
@@ -435,7 +435,7 @@ export default function ConstructorDietasPage() {
 
       toast.success(`Plan sugerido generado para ${DAY_LABELS[selectedDayNumber - 1]}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'No se pudo generar el plan sugerido desde Edamam';
+      const message = err instanceof Error ? err.message : 'No se pudo generar el plan sugerido';
       toast.error(message);
     }
   };
