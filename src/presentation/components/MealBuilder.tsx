@@ -258,11 +258,21 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                         <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg">🍽️</div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-gray-800 truncate">{food.name}</p>
+                        <p className="font-medium text-sm text-gray-800 truncate">
+                          {food.name}
+                          {(food as any).type === 'dish' && (
+                            <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-700 font-medium">Platillo</span>
+                          )}
+                        </p>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs text-gray-500">{food.portion}</span>
                           <span className="text-xs font-medium text-primary">{Math.round(food.calories)} kcal</span>
                         </div>
+                        {(food as any).ingredients && Array.isArray((food as any).ingredients) && (
+                          <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">
+                            {(food as any).ingredients.map((i: any) => i.name).join(', ')}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </button>
