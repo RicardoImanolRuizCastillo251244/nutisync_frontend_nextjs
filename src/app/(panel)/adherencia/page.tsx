@@ -118,7 +118,19 @@ export default function AdherenciaPage() {
         deduped.set(key, log);
       }
     }
-    return Array.from(deduped.values());
+    const dedupedList = Array.from(deduped.values());
+    // Limitar a máximo 3 comidas por día (conservando las más recientes)
+    const byDay = new Map<string, typeof dedupedList>();
+    for (const log of dedupedList) {
+      const list = byDay.get(log.date) ?? [];
+      list.push(log);
+      byDay.set(log.date, list);
+    }
+    return Array.from(byDay.values()).flatMap((dayLogs) =>
+      dayLogs
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 3)
+    );
   }, [allLogs, rangeStartDate, selectedDate]);
 
   const recordsByDate = useMemo(
