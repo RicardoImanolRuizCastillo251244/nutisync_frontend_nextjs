@@ -59,6 +59,39 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
   const handleAddSelectedFood = () => { if (!selectedFood || grams <= 0) return; void addFood(selectedFood, grams); };
   const removeFoodAt = (index: number) => { onMealChange({ ...meal, items: meal.items.filter((_, i) => i !== index) }); };
 
+  const renderDropdownContent = () => {
+    if (isSearching) {
+      return <p className="px-4 py-3 text-sm text-gray-400">Buscando...</p>;
+    }
+    if (filteredFoods.length === 0) {
+      return <p className="px-4 py-3 text-sm text-gray-500">No se encontraron alimentos</p>;
+    }
+    return filteredFoods.map((food) => {
+      const foodImage = food.imageUrl
+        ? <Image src={food.imageUrl} alt={food.name} width={36} height={36} className="rounded-lg object-cover" />
+        : <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg">🍽️</div>;
+
+      return (
+        <button key={food.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => handleSelectFood(food)}
+          className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+          <div className="flex items-center gap-3">
+            {foodImage}
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-sm text-gray-800 truncate">
+                {food.name}
+                {food.type === 'dish' && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-700 font-medium">🍽️ Platillo</span>}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-gray-500">{food.portion}</span>
+                <span className="text-xs font-medium text-primary">{Math.round(food.calories)} kcal</span>
+              </div>
+            </div>
+          </div>
+        </button>
+      );
+    });
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-4">
@@ -126,28 +159,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
           </div>
           {isSearchOpen && debouncedQuery.trim().length >= 2 && (
             <div className="absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-xl max-h-72 overflow-y-auto">
-              {isSearching ? <p className="px-4 py-3 text-sm text-gray-400">Buscando...</p>
-                : filteredFoods.length === 0 ? <p className="px-4 py-3 text-sm text-gray-500">No se encontraron alimentos</p>
-                  : filteredFoods.map((food) => (
-                    <button key={food.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => handleSelectFood(food)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
-                      <div className="flex items-center gap-3">
-                        {food.imageUrl ? <Image src={food.imageUrl} alt={food.name} width={36} height={36} className="rounded-lg object-cover" />
-                          : <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg">🍽️</div>}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm text-gray-800 truncate">
-                            {food.name}
-                            {food.type === 'dish' && <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-100 text-purple-700 font-medium">🍽️ Platillo</span>}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-gray-500">{food.portion}</span>
-                            <span className="text-xs font-medium text-primary">{Math.round(food.calories)} kcal</span>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  ))
-              )}
+              {renderDropdownContent()}
             </div>
           )}
         </div>
