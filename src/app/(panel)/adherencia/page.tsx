@@ -103,10 +103,23 @@ export default function AdherenciaPage() {
     [rangeStartDate, selectedDate]
   );
 
-  const filteredLogs = useMemo(
-    () => allLogs.filter((log) => log.date >= rangeStartDate && log.date <= selectedDate),
-    [allLogs, rangeStartDate, selectedDate]
-  );
+  const dedupedLogs = useMemo(() => {
+    const filtered = allLogs.filter((log) => log.date >= rangeStartDate && log.date <= selectedDate);
+    // Deduplicar: 1 log por mealName por día, priorizando consumed=true y el más reciente
+    const deduped = new Map<string, (typeof filtered)[number]>();
+    for (const log of filtered) {
+      const key = `${log.date}::${log.mealName}`;
+      const existing = deduped.get(key);
+      if (
+        !existing ||
+        (log.consumed && !existing.consumed) ||
+        (log.consumed === existing.consumed && new Date(log.createdAt) > new Date(existing.createdAt))
+      ) {
+        deduped.set(key, log);
+      }
+    }
+    return Array.from(deduped.values());
+  }, [allLogs, rangeStartDate, selectedDate]);
 
   const recordsByDate = useMemo(
     () => new Map(adherenceRecords.map((record) => [record.date, record])),
@@ -125,7 +138,7 @@ export default function AdherenciaPage() {
       (total, date) => total + (mealsByDayNumber.get(getDayNumberFromDate(date))?.length ?? 0),
       0
     );
-    const consumedTotal = filteredLogs.filter((log) => log.consumed).length;
+    const consumedTotal = dedupedLogs.filter((log) => log.consumed).length;
     const adherencePct = expectedTotal > 0 ? (consumedTotal / expectedTotal) * 100 : 0;
 
     return {
@@ -133,12 +146,12 @@ export default function AdherenciaPage() {
       expectedTotal,
       adherencePct,
     };
-  }, [dateSeries, filteredLogs, mealsByDayNumber]);
+  }, [dateSeries, dedupedLogs, mealsByDayNumber]);
 
   // Bug 1: mood usa null (no 0) cuando no hay registro de estado de ánimo
   const chartData = useMemo<AdherenceChartPoint[]>(() => {
-    const logsByDate = new Map<string, typeof filteredLogs>();
-    filteredLogs.forEach((log) => {
+    const logsByDate = new Map<string, typeof dedupedLogs>();
+    dedupedLogs.forEach((log) => {
       const list = logsByDate.get(log.date) ?? [];
       list.push(log);
       logsByDate.set(log.date, list);
@@ -158,7 +171,7 @@ export default function AdherenciaPage() {
         mood: adherenceForDay?.mood ?? null,
       };
     });
-  }, [dateSeries, filteredLogs, mealsByDayNumber, recordsByDate]);
+  }, [dateSeries, dedupedLogs, mealsByDayNumber, recordsByDate]);
 
   const dailyRows = useMemo<MealLogRow[]>(() => {
     const dayLogByMealName = new Map<string, typeof dayLogs[0]>();
