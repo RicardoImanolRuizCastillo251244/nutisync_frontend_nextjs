@@ -77,6 +77,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
     });
     const newItem: MealFoodItem = {
       foodId: food.id, ...calculated, portion: label,
+      imageUrl: food.imageUrl ?? null,
       type: food.type ?? null, ingredients: food.ingredients ?? null,
     };
     onMealChange({ ...meal, items: [...meal.items, newItem] });
@@ -194,7 +195,13 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
           meal.items.map((item, index) => (
             <div key={`${item.foodId}-${index}`} className="group relative">
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-primary/30 transition-colors">
-                <div className="flex-shrink-0 w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-xl">🥘</div>
+                <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden">
+                  {item.imageUrl ? (
+                    <Image src={item.imageUrl} alt={item.foodName} width={40} height={40} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-primary/10 rounded-lg flex items-center justify-center text-xl">🥘</div>
+                  )}
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold text-gray-800 text-sm truncate">
@@ -283,7 +290,11 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
         {selectedFood && (
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-3">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-lg">✅</span>
+              {selectedFood.imageUrl ? (
+                <Image src={selectedFood.imageUrl} alt={selectedFood.name} width={32} height={32} className="rounded-lg object-cover" />
+              ) : (
+                <span className="text-lg">✅</span>
+              )}
               <p className="text-sm font-semibold text-gray-800">{selectedFood.name}</p>
               <span className="text-xs text-gray-500">
                 ({Math.round(selectedFood.calories)} kcal / {selectedFood.portion})
