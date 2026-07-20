@@ -58,16 +58,6 @@ const Sidebar = () => {
         >
           Adherencia
         </Link>
-        <Link
-          href="/medicacion"
-          className={`block px-4 py-2 rounded-lg transition ${
-            isActive('/medicacion')
-              ? 'bg-primary text-white font-semibold shadow-sm'
-              : 'text-gray-700 hover:bg-primary-light/50'
-          }`}
-        >
-          Medicación
-        </Link>
       </nav>
       <div className="p-4 border-t border-primary-light/70 text-sm">
         <button

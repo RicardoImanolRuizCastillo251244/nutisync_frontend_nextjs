@@ -51,7 +51,7 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-72">
-        <h3 className="text-sm font-semibold text-gray-700 mb-2">Consumo de agua (vasos)</h3>
+        <h3 className="text-sm font-semibold text-gray-700 mb-2">Consumo de agua (ml)</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
