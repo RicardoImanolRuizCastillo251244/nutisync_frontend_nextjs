@@ -29,7 +29,7 @@ function mapFood(raw: EdamamFoodResponse, index: number): Food {
     protein: raw.protein,
     carbs: raw.carbs,
     fat: raw.fat,
-    imageUrl: raw.imageUrl ?? null,
+    imageUrl: raw.imageUrl || null,
     sourceUrl: raw.sourceUrl ?? null,
     healthLabels: raw.healthLabels ?? [],
     dietLabels: raw.dietLabels ?? [],

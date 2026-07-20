@@ -9,6 +9,10 @@ import type { MealFoodItem } from '@/src/core/entities/MealFoodItem';
 import { useFoods } from '@/src/adapters/useFoods';
 import { foodApi } from '@/src/infrastructure/api/foodApi';
 
+function isValidImageUrl(url: string | null | undefined): url is string {
+  return typeof url === 'string' && url.length > 0 && url.startsWith('http');
+}
+
 interface MealBuilderProps { meal: Meal; onMealChange: (meal: Meal) => void; }
 interface CustomFoodForm { name: string; calories: number; protein: number; carbs: number; fat: number; }
 const emptyCustomFood: CustomFoodForm = { name: '', calories: 0, protein: 0, carbs: 0, fat: 0 };
@@ -139,7 +143,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
       return <p className="px-4 py-3 text-sm text-gray-500">No se encontraron alimentos</p>;
     }
     return filteredFoods.map((food) => {
-      const foodImage = food.imageUrl
+      const foodImage = isValidImageUrl(food.imageUrl)
         ? <Image src={food.imageUrl} alt={food.name} width={36} height={36} className="rounded-lg object-cover" />
         : <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-lg">🍽️</div>;
       return (
@@ -196,8 +200,8 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
             <div key={`${item.foodId}-${index}`} className="group relative">
               <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-primary/30 transition-colors">
                 <div className="flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden">
-                  {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt={item.foodName} width={40} height={40} className="w-full h-full object-cover" />
+                  {isValidImageUrl(item.imageUrl) ? (
+                    <Image src={item.imageUrl!} alt={item.foodName} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-primary/10 rounded-lg flex items-center justify-center text-xl">🥘</div>
                   )}
@@ -290,7 +294,7 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
         {selectedFood && (
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-3">
             <div className="flex items-center gap-2 mb-3">
-              {selectedFood.imageUrl ? (
+              {isValidImageUrl(selectedFood.imageUrl) ? (
                 <Image src={selectedFood.imageUrl} alt={selectedFood.name} width={32} height={32} className="rounded-lg object-cover" />
               ) : (
                 <span className="text-lg">✅</span>
