@@ -5,8 +5,6 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -67,20 +65,20 @@ export default function AdherenceCharts({ data }: AdherenceChartsProps) {
       <div className="bg-white border border-gray-200 rounded-xl p-4 h-80">
         <h3 className="text-sm font-semibold text-gray-700 mb-2">Estado emocional (1-4)</h3>
         <ResponsiveContainer width="100%" height="80%">
-          <LineChart data={data}>
+          <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" />
             <YAxis
               domain={[0.5, 4.5]}
               ticks={[1, 2, 3, 4]}
-              tickFormatter={(v) => ['', 'Mal', 'Neutral', 'Bien', 'Excelente'][v]}
+              tickFormatter={(v) => ['', '😟', '😐', '🙂', '😊'][v]}
             />
             <Tooltip formatter={(value: any) => {
               if (value == null) return 'Sin registro';
               return ['😟 Mal', '😐 Neutral', '🙂 Bien', '😊 Excelente'][(value as number) - 1] ?? value;
             }} />
-            <Line type="monotone" dataKey="mood" name="Estado" stroke="#0ea5e9" strokeWidth={2} />
-          </LineChart>
+            <Bar dataKey="mood" name="Estado" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
         <div className="flex justify-center gap-4 mt-2 text-xs text-gray-500">
           <span>😟 Mal</span>
