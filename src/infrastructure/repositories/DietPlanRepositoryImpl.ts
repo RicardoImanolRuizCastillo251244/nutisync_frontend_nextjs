@@ -14,6 +14,18 @@ type ApiMealItem = {
   protein?: number | null;
   carbs?: number | null;
   fat?: number | null;
+  type?: string | null;
+  imageUrl?: string | null;
+  ingredients?: Array<{
+    ingredientId?: number;
+    name: string;
+    quantity: number;
+    unit: string;
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+  }> | null;
 };
 
 type ApiMeal = {
@@ -57,6 +69,9 @@ const toMealFoodItem = (raw: ApiMealItem): MealFoodItem => ({
   protein: Number(raw.protein ?? 0),
   carbs: Number(raw.carbs ?? 0),
   fat: Number(raw.fat ?? 0),
+  type: (raw.type as string | null) ?? null,
+  imageUrl: raw.imageUrl ?? null,
+  ingredients: raw.ingredients ?? null,
 });
 
 const toMeal = (raw: ApiMeal): Meal => ({
