@@ -450,7 +450,6 @@ export default function ConstructorDietasPage() {
 
         return {
           ...meal,
-          note: ingredientsText ? `🧂 Ingredientes: ${ingredientsText}` : '',
           items: [mealItem],
         };
       });
