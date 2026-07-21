@@ -395,7 +395,26 @@ export default function ConstructorDietasPage() {
       toast.info('Generando plan sugerido con MexiNutri...');
       const response = (await dietPlanApi.generateSuggested({
         caloriesTarget: targetCalories,
-      })) as { meals?: Array<{ name: string; totalCalories: number; ingredients: string; items: Array<Record<string, unknown>> }>; totalCalories?: number };
+      })) as {
+        meals?: Array<{
+          type?: string;
+          name: string;
+          dishId?: number;
+          imageUrl?: string | null;
+          ingredients?: Array<{
+            ingredientId?: number;
+            name: string;
+            quantity: number;
+            unit: string;
+            calories?: number;
+            protein?: number;
+            carbs?: number;
+            fat?: number;
+          }>;
+          nutrition?: { calories: number; protein: number; carbs: number; fat: number };
+        }>;
+        totalCalories?: number;
+      };
 
       const backendMeals = response?.meals;
       if (!Array.isArray(backendMeals) || backendMeals.length === 0) {
@@ -406,22 +425,33 @@ export default function ConstructorDietasPage() {
       // Emparejar comidas del backend con las del día por índice
       const updatedMeals = selectedDay.meals.map((meal, idx) => {
         const backendMeal = backendMeals[idx];
-        if (!backendMeal?.items?.length) return meal;
+        if (!backendMeal) return meal;
+
+        const nutrition = backendMeal.nutrition ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
+        const ingredientsText = Array.isArray(backendMeal.ingredients)
+          ? backendMeal.ingredients.map((i) => `${i.name} (${i.quantity}${i.unit === 'pieza' ? ' pzas' : 'g'})`).join(', ')
+          : '';
+
+        // Crear un solo MealFoodItem por platillo con toda la info
+        const mealItem = {
+          foodId: `suggested-${backendMeal.dishId ?? Date.now()}-${Math.random()}`,
+          foodName: backendMeal.name,
+          quantity: 1,
+          unit: 'g' as const,
+          portion: '1 platillo',
+          calories: Math.round(nutrition.calories),
+          protein: Number(nutrition.protein.toFixed(1)),
+          carbs: Number(nutrition.carbs.toFixed(1)),
+          fat: Number(nutrition.fat.toFixed(1)),
+          type: backendMeal.type ?? 'dish',
+          imageUrl: backendMeal.imageUrl ?? null,
+          ingredients: Array.isArray(backendMeal.ingredients) ? backendMeal.ingredients : null,
+        };
 
         return {
           ...meal,
-          note: backendMeal.ingredients ? `🧂 Ingredientes: ${backendMeal.ingredients}` : '',
-          items: backendMeal.items.map((item) => ({
-            foodId: `suggested-${Date.now()}-${Math.random()}`,
-            foodName: String(item.name ?? backendMeal.name),
-            quantity: 1,
-            unit: 'g' as const,
-            portion: String(item.portion ?? '1 platillo'),
-            calories: Math.round(Number(item.calories ?? backendMeal.totalCalories)),
-            protein: Number(Number(item.protein ?? 0).toFixed(1)),
-            carbs: Number(Number(item.carbs ?? 0).toFixed(1)),
-            fat: Number(Number(item.fat ?? 0).toFixed(1)),
-          })),
+          note: ingredientsText ? `🧂 Ingredientes: ${ingredientsText}` : '',
+          items: [mealItem],
         };
       });
 
