@@ -14,8 +14,6 @@ function isValidImageUrl(url: string | null | undefined): url is string {
 }
 
 interface MealBuilderProps { meal: Meal; onMealChange: (meal: Meal) => void; }
-interface CustomFoodForm { name: string; calories: number; protein: number; carbs: number; fat: number; }
-const emptyCustomFood: CustomFoodForm = { name: '', calories: 0, protein: 0, carbs: 0, fat: 0 };
 
 type PortionUnit = 'g' | 'porcion(es)' | 'plato(s)' | 'pza(s)';
 
@@ -49,11 +47,6 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
   const [portionQty, setPortionQty] = useState(1);
   const [portionUnit, setPortionUnit] = useState<PortionUnit>('g');
   const [referenceGrams, setReferenceGrams] = useState(100);
-  const [showCustomFood, setShowCustomFood] = useState(false);
-  const [customFood, setCustomFood] = useState<CustomFoodForm>(emptyCustomFood);
-  const [customGrams, setCustomGrams] = useState(100);
-  const [customQty, setCustomQty] = useState(1);
-  const [customUnit, setCustomUnit] = useState<PortionUnit>('porcion(es)');
   const [expandedDishId, setExpandedDishId] = useState<string | null>(null);
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -86,26 +79,6 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
     };
     onMealChange({ ...meal, items: [...meal.items, newItem] });
     setSearchTerm(''); setDebouncedQuery(''); setIsSearchOpen(false); setSelectedFood(null);
-  };
-
-  const handleAddCustomFood = async () => {
-    if (!customFood.name.trim()) return;
-    const { totalGrams, label } = computeGramsAndLabel(customQty, customUnit, customGrams);
-    const calculated = await foodApi.calculateItem({
-      name: customFood.name, portion: `${customGrams} g`,
-      calories: customFood.calories, protein: customFood.protein,
-      carbs: customFood.carbs, fat: customFood.fat, grams: totalGrams,
-    });
-    const newItem: MealFoodItem = {
-      foodId: `custom-${Date.now()}-${Math.random()}`,
-      foodName: calculated.foodName ?? customFood.name,
-      quantity: calculated.quantity, unit: calculated.unit,
-      portion: label, calories: calculated.calories,
-      protein: calculated.protein, carbs: calculated.carbs, fat: calculated.fat,
-    };
-    onMealChange({ ...meal, items: [...meal.items, newItem] });
-    setCustomFood(emptyCustomFood); setCustomGrams(100);
-    setCustomQty(1); setCustomUnit('porcion(es)'); setShowCustomFood(false);
   };
 
   const handleSelectFood = (food: Food) => {
@@ -285,12 +258,6 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
           )}
         </div>
 
-        <button type="button"
-          onClick={() => { setShowCustomFood(true); setCustomFood((prev) => ({ ...prev, name: searchTerm })); }}
-          className="text-xs text-primary font-medium hover:underline inline-flex items-center gap-1">
-          + Agregar alimento personalizado
-        </button>
-
         {selectedFood && (
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-3">
             <div className="flex items-center gap-2 mb-3">
@@ -339,75 +306,6 @@ export default function MealBuilder({ meal, onMealChange }: MealBuilderProps) {
                 💡 Este alimento es un platillo. Se recomienda usar "Plato(s)" o "Porción(es)" como unidad.
               </p>
             )}
-          </div>
-        )}
-
-        {showCustomFood && (
-          <div className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-4">
-            <p className="text-sm font-semibold text-gray-800 mb-3">
-              📝 Alimento personalizado
-            </p>
-            <p className="text-[11px] text-gray-500 -mt-2 mb-3">
-              Ingresa los valores nutricionales para una porción de <strong>{customGrams} g</strong>.
-            </p>
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              <input type="text" value={customFood.name}
-                onChange={(e) => setCustomFood((p) => ({ ...p, name: e.target.value }))}
-                placeholder="Nombre"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-              <input type="number" min={1} value={customGrams}
-                onChange={(e) => setCustomGrams(Number(e.target.value))}
-                placeholder="Gramos por porción"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-              <input type="number" min={0} value={customFood.calories}
-                onChange={(e) => setCustomFood((p) => ({ ...p, calories: Number(e.target.value) }))}
-                placeholder="Calorías"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-              <input type="number" min={0} step={0.1} value={customFood.protein}
-                onChange={(e) => setCustomFood((p) => ({ ...p, protein: Number(e.target.value) }))}
-                placeholder="Proteínas (g)"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-              <input type="number" min={0} step={0.1} value={customFood.carbs}
-                onChange={(e) => setCustomFood((p) => ({ ...p, carbs: Number(e.target.value) }))}
-                placeholder="Carbs (g)"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-              <input type="number" min={0} step={0.1} value={customFood.fat}
-                onChange={(e) => setCustomFood((p) => ({ ...p, fat: Number(e.target.value) }))}
-                placeholder="Grasas (g)"
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-            </div>
-            <div className="flex gap-2 mb-3 items-end">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-600 mb-1">Cantidad a agregar</label>
-                <input type="number" min={1} step={1} value={customQty}
-                  onChange={(e) => setCustomQty(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30" />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Unidad</label>
-                <select value={customUnit}
-                  onChange={(e) => setCustomUnit(e.target.value as PortionUnit)}
-                  className="px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm bg-white">
-                  {unitOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => {
-                setShowCustomFood(false); setCustomFood(emptyCustomFood);
-                setCustomGrams(100); setCustomQty(1); setCustomUnit('porcion(es)');
-              }}
-                className="px-3 py-2 rounded-lg border text-sm hover:bg-gray-50">
-                Cancelar
-              </button>
-              <button onClick={() => void handleAddCustomFood()}
-                disabled={!customFood.name.trim()}
-                className="px-3 py-2 rounded-lg bg-primary text-white text-sm hover:bg-primary-dark disabled:opacity-60">
-                Agregar
-              </button>
-            </div>
           </div>
         )}
       </div>
